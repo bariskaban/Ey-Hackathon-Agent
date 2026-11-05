@@ -241,7 +241,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] Click a row → verdict page for that invoice
 
 ### U8: Demo mode and polish
-- [x] Demo page: one button per demo-script step (idea.md §10), each loading the right invoice and starting verification (`/demo`; steps 1 to 6 start an invoice, steps 7 and 8 open the review queue and audit log. The eval step is left out on purpose: the Eval results page is hidden from the menu, as it is an internal tool, and is still at `/eval`.)
+- [x] Demo page: one button per demo-script step (idea.md §10), each loading the right invoice and starting verification (`/demo`, hidden from the menu like `/eval`; steps 1 to 6 start an invoice, steps 7 and 8 open the review queue and audit log. The eval step is left out on purpose: the Eval results page is an internal tool, hidden from the menu, still at `/eval`.)
 - [x] **Replay mode:** play back a recorded `data/runs/*.jsonl` event stream at real speed, so the demo still works if the live model is slow or fails (`svc.replay()`; long pauses are cut to under 2 seconds. Switch on the Demo page or add `?replay=1` to a verify URL.)
 - [ ] Empty, loading and error states on every page (Empty and error states exist on most pages; there are no loading states yet.)
 - [x] Check the layout at 1366×768 and 1920×1080 (projector sizes)

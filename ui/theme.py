@@ -99,7 +99,6 @@ NAV = [  # (key, label, path, svg path data)
     ("verify", "Live verification", "/verify", '<path d="M22 12h-4l-3 8L9 4l-3 8H2"/>'),
     ("verdict", "Verdicts", "/verdict", '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/>'),
     ("review", "Review queue", "/review", '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>'),
-    ("demo", "Demo", "/demo", '<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>'),
     ("audit", "What the AI saw", "/audit", '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'),
 ]
 

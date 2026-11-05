@@ -135,6 +135,8 @@ INVOICE_SERVICE=real python -m ui.main
 
 The real agent starts its six MCP servers when the interface starts. Choose an invoice in the inbox and select "Verify" to watch the checks fill in live, then open its verdict, review case and the "What the AI saw" log. Set `UI_RELOAD=0` to stop the interface restarting itself when files change.
 
+Two pages are not in the menu, for the team only: <http://localhost:8080/demo> (the demo script, with live runs or recordings; keys 1 to 6 start a step, R switches mode) and <http://localhost:8080/eval> (evaluation results).
+
 ### Optional: inspect the MCP servers
 
 ```bash
