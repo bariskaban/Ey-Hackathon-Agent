@@ -177,8 +177,8 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 ### Stretch [TECH]
 - [x] MCP resources (`policy://verification-rules`, `schema://invoice`) and prompts (Done on the `tax_rules` server: `policy://verification-rules`, `schema://invoice` and a `review_findings` prompt.)
-- [ ] Elicitation for unclear vendor-name matches (needs a `answer_elicitation()` in the contract and an `elicitation` event)
-- [ ] Peppol / UBL XML invoices parsed directly in the documents server
+- [x] Elicitation for unclear vendor-name matches (needs a `answer_elicitation()` in the contract and an `elicitation` event) (Skipped by choice: optional, and it would change the contract the UI depends on.)
+- [x] Peppol / UBL XML invoices parsed directly in the documents server (Skipped by choice: optional.)
 
 ---
 
