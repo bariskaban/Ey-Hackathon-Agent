@@ -84,6 +84,12 @@ Then put the invoices in the inbox, where documents wait to be processed:
 python scripts/load_inbox.py
 ```
 
+To have invoices to upload by hand in the interface, make a few samples. They are copies of some test invoices under descriptive names, kept out of the inbox in `samples/`:
+
+```bash
+python scripts/make_samples.py
+```
+
 To measure how well the model reads the invoices (needs Ollama running):
 
 ```bash

@@ -36,6 +36,7 @@ GRID_CSS = """
 .tm-uploader{flex:1 1 300px;min-width:240px;max-width:100%;background:var(--tm-sheet);color:var(--tm-ink);
   border:1px solid var(--tm-border)}
 .tm-uploader .q-uploader__header{background:var(--tm-ink);color:var(--tm-ground)}
+.tm-uploader .q-uploader__header .q-btn{color:var(--tm-highlighter,#E4F07A)}
 .tm-uploader .q-uploader__list{background:var(--tm-sheet);min-height:64px}
 """
 
