@@ -149,25 +149,27 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 ### Phase 4: Verification core and service
 - [x] `agent/llm.py`: Ollama wrapper (`num_ctx` 8k–16k, `temperature` 0, tools, `format`)
 - [x] `agent/loop.py`: MCP ↔ Ollama tool loop, step limit about 8, invoice text wrapped as untrusted data
-- [x] `agent/checks.py`: fixed checks (vendor, duplicate, already paid, PO and receipt match) (Done: vendor, injection scan, duplicate, already paid, PO amount and goods receipt. The verdict comes from fixed rules in code; the model can only escalate to `NEEDS_REVIEW`. The other checks are added in Phase 5.)
+- [x] `agent/checks.py`: fixed checks (vendor, duplicate, already paid, PO and receipt match) (Done: vendor, injection scan, duplicate, already paid, PO amount and goods receipt. The verdict comes from fixed rules in code; the model can only escalate to `NEEDS_REVIEW`. The remaining checks came in Phase 5.)
 - [x] `agent/service.py`: real implementation of `verify()` emitting every event type in section 1
 - [x] Record each run's events to `data/runs/<doc_id>.jsonl` (powers the UI's replay mode)
 - [ ] **Milestone M2:** one invoice end to end, live in the UI
 
 ### Phase 5: Rule servers
-- [ ] `tax_rules`:
-  - [ ] `validate_vat_number` (`stdnum.nl.btw`, `stdnum.eu.vat`)
-  - [ ] `get_vat_rate(category, date)`
-  - [ ] `expected_vat_treatment`: domestic vs reverse charge between EU businesses
-  - [ ] `check_invoice_requirements`: Belastingdienst mandatory fields + KvK number
-  - [ ] `validate_invoice_math`: lines, VAT per rate, total, rounding
-- [ ] `vendor_checks`: `validate_iban`, `compare_bank_details`, `screen_sanctions` (rapidfuzz), `vendor_employee_overlap`
-- [ ] `anomaly_stats`: `vendor_amount_profile`, `split_invoice_check`, `date_flags` (`holidays` with country `NL`); aggregates only, minimum group size about 5
-- [ ] `review_cases`: `create_review_case`, `add_case_note`, `export_evidence_pack` (PDF + XLSX); append-only
-- [ ] Add their checks to `checks.py`, and emit `check_result` events for each
+- [x] `tax_rules`:
+  - [x] `validate_vat_number` (`stdnum.nl.btw`, `stdnum.eu.vat`)
+  - [x] `get_vat_rate(category, date)`
+  - [x] `expected_vat_treatment`: domestic vs reverse charge between EU businesses
+  - [x] `check_invoice_requirements`: Belastingdienst mandatory fields + KvK number
+  - [x] `validate_invoice_math`: lines, VAT per rate, total, rounding
+- [x] `vendor_checks`: `validate_iban`, `compare_bank_details`, `screen_sanctions` (rapidfuzz), `vendor_employee_overlap`
+- [x] `anomaly_stats`: `vendor_amount_profile`, `split_invoice_check`, `date_flags` (`holidays` with country `NL`); aggregates only, minimum group size about 5
+- [x] `review_cases`: `create_review_case`, `add_case_note`, `export_evidence_pack` (PDF + XLSX); append-only
+- [x] Add their checks to `checks.py`, and emit `check_result` events for each (16 checks now. Scans get special care: a VAT number or IBAN that fails its checksum but is one OCR look-alike swap away from a valid number, or from the vendor's own IBAN, is repaired and flagged rather than rejected; unreadable mandatory fields on a scan give `NEEDS_REVIEW`, not `MISSING_MANDATORY_FIELDS`.)
 - [x] `agent/roles.py`: extractor / verifier / reporter allowlists (the verifier LLM sees 6 tools)
 
 ### Phase 6: Eval
+> **Starting point (one run, qwen3:8b, no model assessment):** 17 of 20 invoices got exactly the expected verdict. The other 3 are scans whose invoice date OCR could not read. Two of them were clean (`MATCHED` expected) and came back `NEEDS_REVIEW`; the third was the duplicate, which was caught but, before the verdict rule was refined to keep real findings, also came back `NEEDS_REVIEW` (it is now `MISMATCH`). Count a clean scan that returns `NEEDS_REVIEW` because a field was unreadable as a **safe fail**, reported separately from a wrong verdict. The agent must never turn an unreadable field into a confident `MATCHED`.
+
 - [ ] `eval/run_eval.py`: all 20 invoices × 3 runs. Per invoice: expected vs actual verdict, error caught, which check caught it, consistency across runs, seconds, tool calls
 - [ ] `run_eval()` in the service streams `EvalProgress` for the UI
 - [ ] Compare models: qwen3:8b against gpt-oss:20b and Qwen3-30B-A3B; save each run as an `EvalReport`

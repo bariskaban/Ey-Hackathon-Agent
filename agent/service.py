@@ -28,10 +28,13 @@ from agent.schemas import (
     Verdict,
 )
 from servers.common import audit
-from servers.common.config import RUNS_DIR, db_path
+from servers.common.config import DATA_DIR, RUNS_DIR, db_path
+from servers.common.db import read_only, writable
 from servers.documents import manifest
 from servers.documents.convert import find_tesseract
 from servers.registry import SERVERS, built_servers
+from servers.review_cases import store
+from servers.review_cases import tools as review_case_tools
 
 _EVENT = TypeAdapter(Event)
 _END = object()
@@ -196,20 +199,25 @@ async def system_status() -> SystemStatus:
 
 
 async def list_cases(status: str | None = None) -> list[ReviewCase]:
-    raise NotImplementedError("review cases arrive with the review_cases server (Phase 5)")
+    """Review cases, most severe first, then newest first."""
+    with read_only() as con:
+        return [ReviewCase(**c) for c in store.list_cases(con, status)]
 
 
 async def get_case(case_id: str) -> ReviewCase:
-    raise NotImplementedError("review cases arrive with the review_cases server (Phase 5)")
+    with read_only() as con:
+        return ReviewCase(**store.get_case(con, case_id))
 
 
 async def set_case_status(case_id: str, status: str, reviewer: str, reason: str) -> ReviewCase:
-    """Humans only. This is never exposed to an agent."""
-    raise NotImplementedError("review cases arrive with the review_cases server (Phase 5)")
+    """Humans only. This is never exposed to an agent: it is not an MCP tool and no role can reach it."""
+    with writable() as con:
+        return ReviewCase(**store.set_status(con, case_id, status, reviewer, reason))
 
 
 async def export_evidence_pack(case_id: str, fmt: str = "pdf") -> Path:
-    raise NotImplementedError("evidence packs arrive with the review_cases server (Phase 5)")
+    """Write the case's evidence pack (pdf or xlsx) and return its path."""
+    return DATA_DIR / review_case_tools.export_evidence_pack(case_id, fmt)["path"]
 
 
 async def run_eval(model: str, runs_per_invoice: int = 3) -> AsyncIterator[EvalProgress]:

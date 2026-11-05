@@ -171,10 +171,10 @@ async def verify_document(doc_id: str, gateway: Gateway, llm: LLM, emit: Callabl
                    "no_text": "no text could be read from the document",
                    "invalid_output": "the model could not produce a valid reading of the invoice"}
         reason = f"{reasons.get(extraction.stopped_reason, 'extraction failed')} ({extraction.error})"
-        return _finish(emitter, Verdict(
+        return await _finish(emitter, recording, Verdict(
             invoice_id=doc_id, verdict=VerdictStatus.NEEDS_REVIEW, needs_review_reasons=[reason],
             reasoning=f"Automatic checks were not possible: {reason}. A person needs to look at this document.",
-            confidence=0.5))
+            confidence=0.5), invoice=None, doc=doc)
     emitter(InvoiceExtractedEvent, invoice=extraction.invoice, low_confidence_fields=extraction.low_confidence_fields)
     emitter.stage(Stage.EXTRACT, StageStatus.DONE)
 
@@ -184,7 +184,8 @@ async def verify_document(doc_id: str, gateway: Gateway, llm: LLM, emit: Callabl
     async def call_verifier(tool: str, args: dict) -> dict:
         return await recording.call("verifier", tool, args, invoice_id=doc_id)
 
-    ctx = checks_mod.Context(invoice=extraction.invoice, markdown=extraction.markdown, call=call_verifier)
+    ctx = checks_mod.Context(invoice=extraction.invoice, markdown=extraction.markdown, call=call_verifier,
+                             ocr=extraction.method == "ocr")
     outcomes: list[checks_mod.CheckOutcome] = []
     for check in checks_mod.FIXED_CHECKS:
         outcome = await checks_mod.run_check(check, ctx)
@@ -198,7 +199,12 @@ async def verify_document(doc_id: str, gateway: Gateway, llm: LLM, emit: Callabl
         (d for o in outcomes for d in o.discrepancies),
         key=lambda d: -checks_mod.SEVERITY_ORDER[d.severity])
     risk_flags = [f for o in outcomes for f in o.risk_flags]
-    needs_review = checks_mod.low_confidence_reasons(extraction.low_confidence_fields)
+    # key fields that master data confirmed (a VAT number found in the vendor master, an IBAN that matches
+    # it) do not need a person even if the scan was hard to read
+    unconfirmed = [f for f in extraction.low_confidence_fields if f not in ctx.verified_fields]
+    needs_review = checks_mod.low_confidence_reasons(unconfirmed)
+    needs_review += [reason for o in outcomes for reason in o.needs_review]
+    incomplete = [reason for o in outcomes for reason in o.incomplete]
     injection = any(d.type.value == "PROMPT_INJECTION" for d in discrepancies)
 
     # 4. the model's pass (it can add context or escalate, never lower the verdict)
@@ -222,23 +228,49 @@ async def verify_document(doc_id: str, gateway: Gateway, llm: LLM, emit: Callabl
     # 5. the verdict, from fixed rules
     verdict = Verdict(
         invoice_id=doc_id,
-        verdict=checks_mod.decide_verdict(discrepancies, needs_review),
+        verdict=checks_mod.decide_verdict(discrepancies, needs_review, incomplete),
         discrepancies=discrepancies,
         evidence_transaction_ids=sorted({t for o in outcomes for t in o.evidence_transaction_ids}),
         risk_flags=list(dict.fromkeys(risk_flags)),
         checks=[o.result for o in outcomes],
         confidence=checks_mod.confidence_for(extraction.low_confidence_fields, escalated),
         reasoning=reasoning,
-        needs_review_reasons=needs_review + ([d.detail or "" for d in discrepancies
+        needs_review_reasons=needs_review + incomplete + ([d.detail or "" for d in discrepancies
                                               if d.type.value == "PROMPT_INJECTION"]),
     )
-    return _finish(emitter, verdict)
+    return await _finish(emitter, recording, verdict, invoice=extraction.invoice, doc=doc)
 
 
-def _finish(emitter: Emitter, verdict: Verdict) -> Verdict:
-    """Emit the verdict stage. The verdict event is always the last event of a run."""
+async def _finish(emitter: Emitter, gateway: RecordingGateway, verdict: Verdict, *, invoice, doc: dict) -> Verdict:
+    """Close the verdict stage, open a review case for anything that is not a clean match, and emit the
+    verdict event. The verdict event is always the last event of a run."""
     emitter.stage(Stage.VERDICT, StageStatus.STARTED)
     verdict.created_at = datetime.now(UTC).isoformat(timespec="seconds")
     emitter.stage(Stage.VERDICT, StageStatus.DONE)
+    if verdict.verdict != VerdictStatus.MATCHED:
+        await _report(emitter, gateway, verdict, invoice, doc)
     emitter(VerdictEvent, verdict=verdict)
     return verdict
+
+
+async def _report(emitter: Emitter, gateway: RecordingGateway, verdict: Verdict, invoice, doc: dict) -> None:
+    """The reporter role: open a review case (append-only) with the evidence, and note the assessment."""
+    emitter.stage(Stage.REPORT, StageStatus.STARTED)
+    evidence = {
+        "verdict": verdict.model_dump(mode="json"),
+        "invoice": invoice.model_dump(mode="json") if invoice else None,
+        "document": {"method": doc.get("method"), "language": doc.get("language"), "char_count": doc.get("char_count")},
+    }
+    result = await gateway.call("reporter", "create_review_case",
+                                {"invoice_id": verdict.invoice_id, "verdict": verdict.verdict.value,
+                                 "evidence": evidence}, invoice_id=verdict.invoice_id)
+    if not result["ok"]:
+        emitter.stage(Stage.REPORT, StageStatus.FAILED)
+        emitter(ErrorEvent, message=f"the review case could not be opened: {result['error']}", stage=Stage.REPORT)
+        return
+    verdict.review_case_id = result["data"]["case_id"]
+    if result["data"]["created"] and verdict.reasoning:
+        await gateway.call("reporter", "add_case_note",
+                           {"case_id": verdict.review_case_id, "note": f"Assessment: {verdict.reasoning}"[:1900]},
+                           invoice_id=verdict.invoice_id)
+    emitter.stage(Stage.REPORT, StageStatus.DONE)

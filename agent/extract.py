@@ -55,7 +55,7 @@ PO number: PO-2026-0042
 Bill to
 Hollandse Handelsgroep B.V.
 Keizersgracht 482, 1017 EG Amsterdam
-VAT number: NL857412368B01
+VAT number: NL367418253B01
 
 Item Description Qty Unit price VAT Amount excl. VAT
 TEC-110 Service call (per hour) 3 EUR 85.00 21% EUR 255.00
@@ -73,7 +73,7 @@ EXAMPLE_INVOICE = Invoice.model_validate({
     "supplier": {"name": "Van Dijk Techniek B.V.", "address": "Industrieweg 12, 3542 AD Utrecht", "country": "NL",
                  "vat_number": "NL001234567B01", "kvk_number": "12345678", "iban": "NL02ABNA0123456789"},
     "buyer": {"name": "Hollandse Handelsgroep B.V.", "address": "Keizersgracht 482, 1017 EG Amsterdam",
-              "country": "NL", "vat_number": "NL857412368B01", "kvk_number": None, "iban": None},
+              "country": "NL", "vat_number": "NL367418253B01", "kvk_number": None, "iban": None},
     "lines": [
         {"sku": "TEC-110", "description": "Service call (per hour)", "quantity": 3, "unit_price": 85,
          "vat_rate": 21, "line_total": 255},

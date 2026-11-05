@@ -25,7 +25,7 @@ from servers.common.audit import AuditLog
 from servers.common.config import ROOT
 from servers.registry import built_servers
 
-DEFAULT_MAX_CALLS = 40  # tool calls per invoice
+DEFAULT_MAX_CALLS = 60  # tool calls per invoice
 DEFAULT_MAX_ROWS = 400  # rows returned per invoice, in total
 
 
