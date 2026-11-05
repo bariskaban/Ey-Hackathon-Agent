@@ -16,15 +16,25 @@ from pathlib import Path
 # Make "ui" and "agent" importable when started as a script (python ui/main.py)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from nicegui import ui  # noqa: E402
+from nicegui import app, ui
 
-from ui import theme  # noqa: E402
-from ui.services import MODE  # noqa: E402
+from ui import theme
 
 # Importing the page modules registers their routes (@ui.page).
-from ui.pages import audit, evals, inbox, review, verdict, verify  # noqa: E402,F401
+from ui.pages import audit, evals, inbox, review, verdict, verify  # noqa: F401
+from ui.services import MODE
 
 theme.setup()
+
+if MODE == "real":
+    from agent import service
+
+    async def _start_backend() -> None:
+        """Start the MCP servers now, so the first page already sees them as up."""
+        await service._runtime.get()
+
+    app.on_startup(_start_backend)
+    app.on_shutdown(service.close)
 
 
 def main() -> None:

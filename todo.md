@@ -30,7 +30,7 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 
 ## 1. The contract between backend and UI [BOTH]
 
-The UI **only** imports `agent/service.py`. Until the backend is ready, the UI uses `ui/mock_service.py` with exactly the same functions. Switch with an env var: `INVOICE_SERVICE=mock|real`.
+The UI **only** imports `agent/service.py`. Until the backend is ready, the UI uses `ui/mock_service.py` with exactly the same functions. Switch with an env var: `INVOICE_SERVICE=mock|real`. (Integration, done: `real` loads `ui/real_service.py`, which calls `agent/service.py` and converts its models to the flat shape the pages read: nested invoice to flat, backend check names to the UI's (16 checks, not 18), review case with a decision, audit entries, eval rows. The backend contract did not change, except that `agent/service.py` gained `add_case_note()`. The audit view lists only the calls of each document's recorded run, so evaluation runs do not inflate it. Tested in `tests/test_ui_real_service.py`.)
 
 ### Service functions (`agent/service.py`)
 
@@ -112,17 +112,10 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 **Severity colours:** high red `#DC2626`, medium orange `#EA580C`, low yellow `#CA8A04`. Check status: pass green, fail red, skipped grey. Always pair colour with an icon and a text label (dark mode, colour-blind users).
 
-<<<<<<< HEAD
 - [x] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus` (Invoice, Verdict, the 8 event types, AuditEntry, ReviewCase, EvalProgress, EvalReport, SystemStatus and DocumentInfo are written; the UI side still needs to review the field names.)
 - [x] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError` (done as the real service: verify, documents, verdict, audit log and status work; case and eval functions raise `NotImplementedError` until Phases 5 and 6.)
-- [x] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later (Done as real recordings, not hand-written: `fixtures/events/` has 5 streams from the real model, an index, and a test that keeps them valid. The duplicate-with-changed-IBAN scenario is covered by two separate streams, `duplicate` and `changed_bank`; a single combined invoice is not in the 20.)
-- [ ] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
-=======
-- [ ] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus`
-- [ ] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError`
-- [ ] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later
+- [x] [TECH] Hand-write 4 sample event streams in `fixtures/recorded_events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later (Done as real recordings, not hand-written: `fixtures/recorded_events/` has 5 streams from the real model, an index, and a test that keeps them valid. The duplicate-with-changed-IBAN scenario is covered by two separate streams, `duplicate` and `changed_bank`; a single combined invoice is not in the 20.)
 - [x] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
->>>>>>> origin/baris-ui-pages
 
 ---
 

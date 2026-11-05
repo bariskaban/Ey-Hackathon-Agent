@@ -52,11 +52,13 @@ async def eval_page() -> None:
                     return
                 latest = reports[0]
                 s = _summary(latest)
-                misses = [r.doc_id for r in latest.rows
-                          if Counter(key(x) for x in r.runs).most_common(1)[0][0] != key(r.expected_verdict)]
+                safe = [r.doc_id for r in latest.rows if getattr(r, "outcome", None) == "safe_fail"]
+                misses = [r.doc_id for r in latest.rows if r.doc_id not in safe
+                          and Counter(key(x) for x in r.runs).most_common(1)[0][0] != key(r.expected_verdict)]
                 flips = [r.doc_id for r in latest.rows if len({key(x) for x in r.runs}) > 1]
                 heads = [
-                    ("Correct verdicts", s["correct"], f" of {s['n']}", f"Majority verdict across {latest.runs_per_invoice} runs"),
+                    ("Correct verdicts", s["correct"], f" of {s['n']}", f"Majority verdict across {latest.runs_per_invoice} runs"
+                     + (f". Sent to a person instead of guessing: {', '.join(safe)}" if safe else "")),
                     ("Planted errors caught", s["caught"], f" of {s['planted']}", "Missed: " + ", ".join(misses) if misses else "None missed"),
                     (f"Same verdict in all {latest.runs_per_invoice} runs", s["consistent"], f" of {s['n']}",
                      "Changed: " + ", ".join(flips) if flips else "No verdict changed between runs"),
@@ -79,13 +81,15 @@ async def eval_page() -> None:
                     cells = []
                     for x in r.runs:
                         good = key(x) == key(r.expected_verdict)
-                        c = ok if good else bad
-                        word = "Correct" if good else f"Wrong: {VERDICTS.get(key(x), {}).get('label', x)}"
+                        careful = not good and getattr(r, "outcome", None) == "safe_fail" and key(x) == "NEEDS_REVIEW"
+                        c = ok if good else VERDICTS["NEEDS_REVIEW"] if careful else bad
+                        word = ("Correct" if good else "Safe: sent to a person" if careful
+                                else f"Wrong: {VERDICTS.get(key(x), {}).get('label', x)}")
                         cells.append(f'<td style="text-align:center"><span role="img" aria-label="{word}" title="{word}" '
                                      f'style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;'
                                      f'border-radius:4px;border:1.5px solid {c["base"]};background:{c["tint"]};color:{c["text"]};'
-                                     f'font-weight:700">{TICK_CH if good else CROSS_CH}</span></td>')
-                    wrong = any(key(x) != key(r.expected_verdict) for x in r.runs)
+                                     f'font-weight:700">{TICK_CH if good else "!" if careful else CROSS_CH}</span></td>')
+                    wrong = r.doc_id not in safe and any(key(x) != key(r.expected_verdict) for x in r.runs)
                     exp = VERDICTS.get(key(r.expected_verdict), {}).get("label", r.expected_verdict)
                     rows.append(f'<tr class="{"tm-bad" if wrong else ""}" data-href="/verdict/{esc(r.doc_id)}" '
                                 f'onclick="if(!event.target.closest(\'a\'))location.href=this.dataset.href" style="cursor:pointer">'

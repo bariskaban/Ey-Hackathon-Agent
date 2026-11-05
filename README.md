@@ -118,6 +118,24 @@ ollama pull gpt-oss:20b
 python eval/run_eval.py --model gpt-oss:20b
 ```
 
+### 9. Run the interface
+
+```bash
+python -m ui.main
+```
+
+Open <http://localhost:8080>. This uses recorded sample data and needs nothing else. To run the real agent (it needs Ollama running and the inbox loaded, steps 4 and 6):
+
+```bash
+# Windows (PowerShell)
+$env:INVOICE_SERVICE = "real"; python -m ui.main
+
+# macOS / Linux / Git Bash
+INVOICE_SERVICE=real python -m ui.main
+```
+
+The real agent starts its six MCP servers when the interface starts. Choose an invoice in the inbox and select "Verify" to watch the checks fill in live, then open its verdict, review case and the "What the AI saw" log. Set `UI_RELOAD=0` to stop the interface restarting itself when files change.
+
 ### Optional: inspect the MCP servers
 
 ```bash

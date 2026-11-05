@@ -8,7 +8,7 @@ from typing import Any
 from nicegui import ui
 
 from ui.components.widgets import check_icon, check_word, page_header, role_tag, severity_tag, stamp, verdict_badge
-from ui.services import open_case_count, svc
+from ui.services import expected_checks, open_case_count, svc
 from ui.theme import CHECK_LABELS, ROLE_LABELS, SERVER_GROUPS, esc, eur, fmt_date, html, key, shell
 
 STAGES = [("convert", "Read document"), ("extract", "Extract fields"), ("checks", "Run checks"),
@@ -95,7 +95,7 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                              f'<span class="tm-small">{esc(detail)}</span></li>')
             stepper.set_content('<ol class="tm-steps" aria-label="Verification stages">' + "".join(parts) + "</ol>")
 
-            total = len(CHECK_LABELS)
+            total = len(expected_checks())
             checks_head.set_content(
                 '<div class="tm-card-head"><h2 class="tm-h2">Checks</h2>'
                 f'<span class="tm-small" style="font-size:14px">{state["done_checks"]} of {total} done'
@@ -103,7 +103,7 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
             groups = []
             for server, gtitle in SERVER_GROUPS:
                 items = [c for c in state["checks"].values() if c["server"] == server]
-                pending = [n for n, s in _CHECK_SERVER.items() if s == server and n not in state["checks"]]
+                pending = [n for n, s in expected_checks().items() if s == server and n not in state["checks"]]
                 if not items and not pending:
                     continue
                 lis = []
@@ -256,19 +256,9 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                 render()
 
 
-_CHECK_SERVER = {
-    "prompt_injection": "host", "vendor_known": "transactions", "not_duplicate": "transactions",
-    "not_already_paid": "transactions", "po_match": "transactions", "goods_received": "transactions",
-    "vat_number_valid": "tax_rules", "vat_treatment": "tax_rules", "vat_rate": "tax_rules",
-    "mandatory_fields": "tax_rules", "vat_math": "tax_rules", "iban_valid": "vendor_checks",
-    "bank_details_match": "vendor_checks", "sanctions": "vendor_checks", "employee_overlap": "vendor_checks",
-    "amount_typical": "anomaly_stats", "no_split": "anomaly_stats", "date_ok": "anomaly_stats",
-}
-
-
 def _next_server(state: dict) -> str | None:
     for server, _ in SERVER_GROUPS:
-        if any(s == server and n not in state["checks"] for n, s in _CHECK_SERVER.items()):
+        if any(s == server and n not in state["checks"] for n, s in expected_checks().items()):
             return server
     return None
 
@@ -280,7 +270,7 @@ def _stage_detail(stage: str, state: dict) -> str:
     if stage == "extract":
         return state.get("extract", "")
     if stage == "checks":
-        return f'{state["done_checks"]} of {len(CHECK_LABELS)} done' if st else ""
+        return f'{state["done_checks"]} of {len(expected_checks())} done' if st else ""
     if stage == "agent":
         return "Up to 8 extra lookups" if not st else ("Notes written" if st == "done" else "Looking things up")
     if stage == "verdict" and state.get("verdict") is not None:
