@@ -25,7 +25,7 @@ from types import SimpleNamespace
 from typing import Any, AsyncIterator
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
-WORK_DIR = Path(tempfile.gettempdir()) / "tickmark_mock"
+WORK_DIR = Path(tempfile.gettempdir()) / "vera_mock"
 SPEED = float(os.getenv("MOCK_SPEED", "1.0"))
 
 # --------------------------------------------------------------------------

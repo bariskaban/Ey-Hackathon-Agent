@@ -26,13 +26,13 @@ async def verify_index() -> None:
         for d in docs:
             done = key(d.status) == "VERIFIED"
             href = f"/verdict/{esc(d.doc_id)}" if done else f"/verify/{esc(d.doc_id)}?start=1"
-            rows.append(f'<tr><td class="tm-num">{esc(d.doc_id)}</td><td>{esc(d.vendor_name or d.filename)}</td>'
-                        f'<td class="tm-num tm-right">{eur(d.amount_total)}</td><td>{verdict_badge(d.verdict)}</td>'
-                        f'<td class="tm-right"><a class="tm-btn tm-btn-small" href="{href}">'
+            rows.append(f'<tr><td class="vr-num">{esc(d.doc_id)}</td><td>{esc(d.vendor_name or d.filename)}</td>'
+                        f'<td class="vr-num vr-right">{eur(d.amount_total)}</td><td>{verdict_badge(d.verdict)}</td>'
+                        f'<td class="vr-right"><a class="vr-btn vr-btn-small" href="{href}">'
                         f'{"Open verdict" if done else "Verify"}</a></td></tr>')
-        html('<section class="tm-card"><div class="tm-table-wrap"><table class="tm-table"><thead><tr>'
-             '<th>Document</th><th>Vendor</th><th class="tm-right">Amount</th><th>Verdict</th>'
-             '<th><span class="tm-sr">Action</span></th></tr></thead><tbody>' + "".join(rows) + "</tbody></table></div></section>")
+        html('<section class="vr-card"><div class="vr-table-wrap"><table class="vr-table"><thead><tr>'
+             '<th>Document</th><th>Vendor</th><th class="vr-right">Amount</th><th>Verdict</th>'
+             '<th><span class="vr-sr">Action</span></th></tr></thead><tbody>' + "".join(rows) + "</tbody></table></div></section>")
 
 
 @ui.page("/verify/{doc_id}")
@@ -52,29 +52,29 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                                  "failed_checks": 0}
 
         # ---------- header ----------
-        with ui.element("div").classes("tm-header"):
-            title = esc(doc.vendor_name or doc.filename)
-            sub = (f"Invoice {esc(doc.invoice_number)}, <span class='tm-num'>{eur(doc.amount_total)}</span>, "
+        with ui.element("div").classes("vr-header"):
+            title = doc.vendor_name or doc.filename  # page_header escapes it
+            sub = (f"Invoice {esc(doc.invoice_number)}, <span class='vr-num'>{eur(doc.amount_total)}</span>, "
                    f"dated {fmt_date(doc.invoice_date)}") if doc.invoice_number else esc(doc.filename)
             html(page_header(f"Verifying {title}", sub,
-                             f'<a href="/">Inbox</a> / <span class="tm-num">{esc(doc_id)}</span>'))
+                             f'<a href="/">Inbox</a> / <span class="vr-num">{esc(doc_id)}</span>'))
             with ui.element("div").style("display:flex;flex-wrap:wrap;align-items:center;gap:10px"):
                 mode_chip = html("")
                 timer_chip = html("")
                 start_btn = ui.button("Start verification", on_click=lambda: begin()) \
-                    .props("no-caps unelevated").classes("tm-btn tm-btn-primary")
-                cancel_btn = ui.button("Cancel run", on_click=lambda: cancel()).props("no-caps flat").classes("tm-btn")
+                    .props("no-caps unelevated").classes("vr-btn vr-btn-primary")
+                cancel_btn = ui.button("Cancel run", on_click=lambda: cancel()).props("no-caps flat").classes("vr-btn")
 
         mode_chip.set_content(
-            '<span class="tm-pill"><span class="tm-dot" style="background:#1D4ED8"></span>Replay recording</span>'
-            if replay else '<span class="tm-pill"><span class="tm-dot" style="background:#B91C1C"></span>Live run</span>')
+            '<span class="vr-pill"><span class="vr-dot" style="background:#1D4ED8"></span>Replay recording</span>'
+            if replay else '<span class="vr-pill"><span class="vr-dot" style="background:#B91C1C"></span>Live run</span>')
 
         stepper = html("")
         error_box = ui.element("div")
         result_box = ui.element("div")
 
-        with ui.element("div").classes("tm-row"):
-            with ui.element("section").classes("tm-card").style("flex:3 1 520px;min-width:0") \
+        with ui.element("div").classes("vr-row"):
+            with ui.element("section").classes("vr-card").style("flex:3 1 520px;min-width:0") \
                     .props('aria-label="Checks"'):
                 checks_head = html("")
                 checks_body = html("")
@@ -87,18 +87,18 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
             parts = []
             for i, (k, label) in enumerate(STAGES, 1):
                 st = state["stages"].get(k)
-                cls, word = {"started": ("tm-step-now", "In progress"), "done": ("tm-step-done", "Done"),
-                             "failed": ("tm-step-failed", "Failed")}.get(st, ("", "Next"))
+                cls, word = {"started": ("vr-step-now", "In progress"), "done": ("vr-step-done", "Done"),
+                             "failed": ("vr-step-failed", "Failed")}.get(st, ("", "Next"))
                 detail = _stage_detail(k, state)
-                parts.append(f'<li class="tm-step {cls}"><span class="tm-small"><span class="tm-num">{i}</span> {word}</span>'
+                parts.append(f'<li class="vr-step {cls}"><span class="vr-small"><span class="vr-num">{i}</span> {word}</span>'
                              f'<span style="font-size:16px;font-weight:700">{label}</span>'
-                             f'<span class="tm-small">{esc(detail)}</span></li>')
-            stepper.set_content('<ol class="tm-steps" aria-label="Verification stages">' + "".join(parts) + "</ol>")
+                             f'<span class="vr-small">{esc(detail)}</span></li>')
+            stepper.set_content('<ol class="vr-steps" aria-label="Verification stages">' + "".join(parts) + "</ol>")
 
             total = len(expected_checks())
             checks_head.set_content(
-                '<div class="tm-card-head"><h2 class="tm-h2">Checks</h2>'
-                f'<span class="tm-small" style="font-size:14px">{state["done_checks"]} of {total} done'
+                '<div class="vr-card-head"><h2 class="vr-h2">Checks</h2>'
+                f'<span class="vr-small" style="font-size:14px">{state["done_checks"]} of {total} done'
                 f'{", " + str(state["failed_checks"]) + " failed" if state["failed_checks"] else ""}</span></div>')
             groups = []
             for server, gtitle in SERVER_GROUPS:
@@ -109,45 +109,45 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                 lis = []
                 for c in items:
                     sev = severity_tag(c.get("severity")) if c["status"] == "fail" else ""
-                    lis.append(f'<li class="tm-check">{check_icon(c["status"])}<div style="flex:1;min-width:0">'
+                    lis.append(f'<li class="vr-check">{check_icon(c["status"])}<div style="flex:1;min-width:0">'
                                f'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">'
                                f'<span style="font-size:15px;font-weight:700">{esc(CHECK_LABELS.get(c["name"], c["name"]))}</span>'
                                f'{check_word(c["status"])}{sev}</div>'
-                               f'<p style="margin:3px 0 0;font-size:14px;color:var(--tm-body2)">{esc(c["detail"])}</p></div></li>')
+                               f'<p style="margin:3px 0 0;font-size:14px;color:var(--vr-body2)">{esc(c["detail"])}</p></div></li>')
                 running = state["running"] and state["stages"].get("checks") == "started"
                 for i, n in enumerate(pending):
                     st = "running" if running and i == 0 and server == _next_server(state) else "waiting"
-                    lis.append(f'<li class="tm-check">{check_icon(st)}<div style="flex:1">'
+                    lis.append(f'<li class="vr-check">{check_icon(st)}<div style="flex:1">'
                                f'<span style="font-size:15px;font-weight:700">{esc(CHECK_LABELS[n])}</span> {check_word(st)}</div></li>')
                 groups.append(f'<div style="padding:8px 20px 12px"><h3 style="margin:10px 0 4px;font-size:14px;'
-                              f'font-weight:700;color:var(--tm-body2)">{gtitle} <span style="font-weight:400" class="tm-small">'
-                              f'server: <span class="tm-num">{server}</span></span></h3>'
+                              f'font-weight:700;color:var(--vr-body2)">{gtitle} <span style="font-weight:400" class="vr-small">'
+                              f'server: <span class="vr-num">{server}</span></span></h3>'
                               f'<ul style="list-style:none;margin:0;padding:0">{"".join(lis)}</ul></div>')
             checks_body.set_content("".join(groups))
 
-            notes = "".join(f'<div class="tm-note"><span style="font-size:13px;font-weight:700;color:var(--tm-body2)">'
+            notes = "".join(f'<div class="vr-note"><span style="font-size:13px;font-weight:700;color:var(--vr-body2)">'
                             f'{ROLE_LABELS.get(n["role"], n["role"])}, {n["t"]}</span>'
                             f'<p style="margin:0;font-size:15px;line-height:1.5">{esc(n["text"])}</p></div>'
                             for n in state["notes"])
             if not any(n["role"] == "verifier" for n in state["notes"]):
-                notes += ('<div class="tm-empty">The verifier writes its notes when the checks finish.</div>')
-            notes_box.set_content('<section class="tm-card tm-pad" aria-label="Agent notes" style="display:flex;'
-                                  'flex-direction:column;gap:12px"><h2 class="tm-h2">Agent notes</h2>' + notes + "</section>")
+                notes += ('<div class="vr-empty">The verifier writes its notes when the checks finish.</div>')
+            notes_box.set_content('<section class="vr-card vr-pad" aria-label="Agent notes" style="display:flex;'
+                                  'flex-direction:column;gap:12px"><h2 class="vr-h2">Agent notes</h2>' + notes + "</section>")
 
             feed = "".join(
-                f'<li class="tm-feed-item" style="{"background:#FBEDEC" if f["refused"] else ""}">'
-                f'<span class="tm-num" style="flex:0 0 42px;color:var(--tm-muted);padding-top:2px">{f["t"]}</span>'
+                f'<li class="vr-feed-item" style="{"background:#FBEDEC" if f["refused"] else ""}">'
+                f'<span class="vr-num" style="flex:0 0 42px;color:var(--vr-muted);padding-top:2px">{f["t"]}</span>'
                 f'<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">'
                 f'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">{role_tag(f["role"])}'
-                f'<span class="tm-num" style="font-weight:500;overflow-wrap:anywhere">{esc(f["tool"])}</span></div>'
-                f'<span style="font-size:13px;color:{"#B91C1C" if f["refused"] else "var(--tm-graphite)"};'
+                f'<span class="vr-num" style="font-weight:500;overflow-wrap:anywhere">{esc(f["tool"])}</span></div>'
+                f'<span style="font-size:13px;color:{"#B91C1C" if f["refused"] else "var(--vr-graphite)"};'
                 f'font-weight:{700 if f["refused"] else 400}">{esc(f["meta"])}</span></div></li>'
                 for f in reversed(state["feed"][-14:]))
             feed_box.set_content(
-                '<section class="tm-card" aria-label="Tool calls"><div class="tm-card-head"><h2 class="tm-h2">Tool calls</h2>'
+                '<section class="vr-card" aria-label="Tool calls"><div class="vr-card-head"><h2 class="vr-h2">Tool calls</h2>'
                 f'<a href="/audit?doc={esc(doc_id)}" style="font-size:14px;font-weight:700">Open full log</a></div>'
                 + (f'<ul style="list-style:none;margin:0;padding:4px 0">{feed}</ul>' if feed
-                   else '<div class="tm-empty" style="margin:16px">No tool calls yet.</div>') + "</section>")
+                   else '<div class="vr-empty" style="margin:16px">No tool calls yet.</div>') + "</section>")
 
             start_btn.set_visibility(not state["running"])
             start_btn.text = "Run again" if state["verdict"] or state["error"] else "Start verification"
@@ -158,7 +158,7 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                 secs = int(time.monotonic() - state["t0"])
                 state["elapsed"] = secs
             secs = state.get("elapsed", 0)
-            timer_chip.set_content(f'<span class="tm-pill">Elapsed <span class="tm-num" style="font-size:15px;'
+            timer_chip.set_content(f'<span class="vr-pill">Elapsed <span class="vr-num" style="font-size:15px;'
                                    f'font-weight:500">{secs // 60:02d}:{secs % 60:02d}</span></span>')
 
         def elapsed_label() -> str:
@@ -201,18 +201,18 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
             v = state["verdict"]
             result_box.clear()
             with result_box:
-                html(f'<section class="tm-card" style="display:flex;flex-wrap:wrap;gap:28px;align-items:center;padding:22px 26px">'
+                html(f'<section class="vr-card" style="display:flex;flex-wrap:wrap;gap:28px;align-items:center;padding:22px 26px">'
                      f'{stamp(v.verdict, doc_id, getattr(v, "created_at", None))}'
-                     f'<div style="flex:1 1 380px;min-width:0"><h2 class="tm-h2">Verdict ready</h2>'
+                     f'<div style="flex:1 1 380px;min-width:0"><h2 class="vr-h2">Verdict ready</h2>'
                      f'<p style="margin:6px 0 0;font-size:16px;line-height:1.55;max-width:70ch">{esc(getattr(v, "auditor_note", ""))}</p></div>'
-                     f'<a class="tm-btn tm-btn-primary" href="/verdict/{esc(doc_id)}">Open verdict</a></section>')
+                     f'<a class="vr-btn vr-btn-primary" href="/verdict/{esc(doc_id)}">Open verdict</a></section>')
 
         def show_error() -> None:
             error_box.clear()
             with error_box:
-                html('<div class="tm-card" style="border-color:#DC2626;padding:16px 20px;display:flex;flex-direction:column;gap:6px">'
+                html('<div class="vr-card" style="border-color:#DC2626;padding:16px 20px;display:flex;flex-direction:column;gap:6px">'
                      '<strong style="color:#B91C1C">Verification stopped</strong>'
-                     f'<span>{esc(state["error"])}</span><span class="tm-small">Check that Ollama and the servers are '
+                     f'<span>{esc(state["error"])}</span><span class="vr-small">Check that Ollama and the servers are '
                      'running, then use "Run again".</span></div>')
 
         async def run() -> None:

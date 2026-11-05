@@ -1,0 +1,200 @@
+/* Vera: the interface's stylesheet.
+   Colours come from the tokens in ui/theme.py (--vr-*, light and dark). Everything else is here. */
+
+@font-face{font-family:'Atkinson Hyperlegible Mono';font-weight:400;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-mono-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Atkinson Hyperlegible Mono';font-weight:500;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-mono-latin-500-normal.woff2') format('woff2')}
+
+:root{
+  --vr-font:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --vr-display:"Inter Tight","Inter","Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --vr-mono:'Atkinson Hyperlegible Mono',ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body{margin:0;color:var(--vr-ink);font-family:var(--vr-font);font-size:15px;line-height:1.5;font-feature-settings:"cv11","ss01";
+  background:
+    radial-gradient(900px 420px at 78% -8%,color-mix(in srgb,var(--vr-accent) 11%,transparent),transparent 70%),
+    radial-gradient(700px 380px at 0% 105%,color-mix(in srgb,var(--vr-accent) 6%,transparent),transparent 70%),
+    var(--vr-ground);
+  background-attachment:fixed}
+.nicegui-content{padding:0 !important;gap:0 !important}
+a{color:var(--vr-accent);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--vr-ink)}
+::selection{background:color-mix(in srgb,var(--vr-accent) 28%,transparent)}
+:focus-visible{outline:2px solid var(--vr-accent) !important;outline-offset:2px;border-radius:8px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--vr-rule-strong);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+
+/* ---------------------------------------------------------------- frame */
+.vr-app{display:flex;flex-wrap:wrap;min-height:100vh;width:100%}
+.vr-rail{flex:0 0 260px;position:sticky;top:0;height:100vh;align-self:flex-start;overflow-y:auto;padding:24px 14px 20px;
+  display:flex;flex-direction:column;gap:28px;
+  background:linear-gradient(180deg,#10142C 0%,var(--vr-rail) 55%);border-right:1px solid rgba(255,255,255,.05)}
+.vr-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#fff;padding:2px 10px}
+.vr-brand:hover{color:#fff}
+.vr-brand svg{flex:none;filter:drop-shadow(0 6px 14px rgba(110,90,255,.45))}
+.vr-brand-text{display:flex;flex-direction:column;line-height:1.1}
+.vr-brand-name{font-family:var(--vr-display);font-size:23px;font-weight:700;letter-spacing:-.035em}
+.vr-brand-tag{margin-top:4px;font-size:11.5px;letter-spacing:.03em;color:var(--vr-rail-text)}
+.vr-nav-label{padding:0 12px 8px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#6C7494}
+.vr-nav{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.vr-nav-link{position:relative;display:flex;align-items:center;gap:12px;min-height:42px;padding:0 12px;border-radius:11px;
+  color:var(--vr-rail-text);text-decoration:none;font-size:14.5px;font-weight:500;letter-spacing:-.005em;
+  transition:background .16s,color .16s}
+.vr-nav-link svg{flex:none;opacity:.8;transition:opacity .16s,color .16s}
+.vr-nav-link:hover{background:rgba(255,255,255,.06);color:#fff}
+.vr-nav-link:hover svg{opacity:1}
+.vr-nav-link[aria-current="page"]{background:linear-gradient(90deg,rgba(142,128,255,.22),rgba(142,128,255,.08));color:#fff;font-weight:600}
+.vr-nav-link[aria-current="page"] svg{color:#B6AEFF;opacity:1}
+.vr-nav-link[aria-current="page"]::before{content:"";position:absolute;left:-14px;top:11px;bottom:11px;width:3px;
+  border-radius:0 3px 3px 0;background:#9D90FF;box-shadow:0 0 12px rgba(157,144,255,.8)}
+.vr-nav-count{margin-left:auto;min-width:22px;text-align:center;font-size:11.5px;font-weight:700;color:#fff;
+  background:#6F60F0;border-radius:999px;padding:1px 8px}
+.vr-rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.vr-rail-note{display:flex;gap:11px;align-items:flex-start;padding:14px;border-radius:14px;font-size:12.5px;line-height:1.55;
+  color:var(--vr-rail-text);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+.vr-rail-note strong{display:block;color:#fff;font-weight:600;margin-bottom:2px}
+.vr-rail-lock{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;color:#B6AEFF;background:rgba(142,128,255,.16)}
+.vr-main{flex:1 1 560px;min-width:0;max-width:1480px;margin:0 auto;padding:40px 52px 72px;
+  display:flex;flex-direction:column;gap:26px}
+@media (max-width:900px){
+  .vr-rail{flex:1 1 100%;position:static;height:auto;padding:16px;gap:16px}
+  .vr-nav{flex-direction:row;flex-wrap:wrap}
+  .vr-nav-label,.vr-rail-note{display:none}
+  .vr-nav-link[aria-current="page"]::before{display:none}
+}
+@media (max-width:700px){.vr-main{padding:24px 16px 48px}}
+
+/* ---------------------------------------------------------------- type */
+.vr-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.vr-h1{margin:0;font-family:var(--vr-display);font-size:32px;font-weight:700;letter-spacing:-.035em;line-height:1.15}
+.vr-h2{margin:0;font-family:var(--vr-display);font-size:20px;font-weight:650;letter-spacing:-.02em}
+.vr-h3{margin:0;font-family:var(--vr-display);font-size:17px;font-weight:650;letter-spacing:-.015em}
+.vr-sub{margin:6px 0 0;font-size:15px;color:var(--vr-graphite);max-width:68ch}
+.vr-small{font-size:13px;color:var(--vr-graphite)}
+.vr-crumb{margin:0 0 6px;font-size:13px;font-weight:500;color:var(--vr-graphite)}
+.vr-crumb a{color:var(--vr-graphite);text-decoration:none}
+.vr-crumb a:hover{color:var(--vr-accent)}
+.vr-num{font-family:var(--vr-mono);font-size:13px;font-variant-numeric:tabular-nums}
+dl{margin:0} dd{margin:2px 0 0}
+
+/* ---------------------------------------------------------------- surfaces */
+.vr-card{background:var(--vr-sheet);border:1px solid var(--vr-border);border-radius:18px;box-shadow:var(--vr-shadow-sm)}
+.vr-card-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;
+  padding:18px 22px;border-bottom:1px solid var(--vr-rule)}
+.vr-pad{padding:20px 22px}
+.vr-row{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.vr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+
+.vr-pill{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;background:var(--vr-sheet);
+  border:1px solid var(--vr-border);border-radius:999px;font-size:13.5px;font-weight:500;box-shadow:var(--vr-shadow-sm)}
+.vr-pill-strong{background:var(--vr-ink);color:var(--vr-ground);border-color:transparent;font-weight:600}
+.vr-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* ---------------------------------------------------------------- buttons */
+.vr-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;
+  border:1px solid var(--vr-border);border-radius:12px;font:inherit;font-size:14.5px;font-weight:600;letter-spacing:-.005em;
+  cursor:pointer;text-decoration:none;background:var(--vr-sheet);color:var(--vr-ink);white-space:nowrap;
+  box-shadow:0 1px 2px rgba(15,18,34,.07);transition:background .16s,border-color .16s,box-shadow .16s,transform .16s}
+.vr-btn:hover{background:var(--vr-accent-soft);border-color:var(--vr-rule-strong);color:var(--vr-ink)}
+.vr-btn:active{transform:translateY(1px)}
+.vr-btn-primary{background:linear-gradient(180deg,color-mix(in srgb,var(--vr-accent) 92%,#fff),var(--vr-accent));
+  color:var(--vr-on-accent);border-color:transparent;
+  box-shadow:0 8px 20px -8px color-mix(in srgb,var(--vr-accent) 80%,transparent),inset 0 1px 0 rgba(255,255,255,.22)}
+.vr-btn-primary:hover{background:color-mix(in srgb,var(--vr-accent) 88%,#000);color:var(--vr-on-accent);border-color:transparent;
+  transform:translateY(-1px)}
+.vr-btn-small{min-height:34px;padding:0 14px;font-size:13px;border-radius:10px}
+.vr-btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ---------------------------------------------------------------- badges and tags */
+.vr-badge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px 0 8px;border:1px solid;
+  border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.vr-badge-icon{width:16px;text-align:center}
+.vr-tag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:2px 10px;
+  border-radius:999px;border:1px solid;white-space:nowrap}
+.vr-tag-wrap{white-space:normal;align-items:flex-start;text-align:left;line-height:1.4;max-width:100%;border-radius:12px;padding:4px 10px}
+.vr-role{font-size:11.5px;font-weight:600;padding:1px 9px;border-radius:999px;border:1px solid var(--vr-rule-strong);white-space:nowrap}
+.vr-role-extractor{background:var(--vr-sheet);color:var(--vr-ink)}
+.vr-role-verifier{background:var(--vr-ink);color:var(--vr-ground);border-color:transparent}
+.vr-role-reporter{background:var(--vr-accent-soft);color:var(--vr-accent);border-color:color-mix(in srgb,var(--vr-accent) 35%,transparent)}
+
+/* The verdict banner: the one loud element on the verdict page */
+.vr-stamp{display:inline-flex;align-items:center;gap:16px;border:1px solid;border-radius:20px;padding:14px 26px 14px 14px;
+  box-shadow:var(--vr-shadow-md)}
+.vr-stamp-icon{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:14px;color:#fff;
+  font-size:22px;font-weight:700;line-height:1;box-shadow:0 8px 18px -8px currentColor}
+.vr-stamp-body{display:flex;flex-direction:column;gap:3px}
+.vr-stamp-word{font-family:var(--vr-display);font-size:30px;font-weight:700;letter-spacing:-.035em;line-height:1.05}
+.vr-stamp-small{gap:10px;padding:6px 14px 6px 6px;border-radius:14px;box-shadow:none}
+.vr-stamp-small .vr-stamp-icon{width:26px;height:26px;border-radius:8px;font-size:14px;box-shadow:none}
+.vr-stamp-small .vr-stamp-word{font-size:16px;letter-spacing:-.02em}
+
+/* ---------------------------------------------------------------- tables */
+.vr-table-wrap{overflow-x:auto}
+.vr-table{width:100%;border-collapse:collapse}
+.vr-table th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--vr-graphite);
+  padding:12px 16px;border-bottom:1px solid var(--vr-rule);white-space:nowrap}
+.vr-table td{padding:13px 16px;border-bottom:1px solid var(--vr-rule-faint);font-size:14px;vertical-align:middle}
+.vr-table tbody tr:last-child td{border-bottom:0}
+.vr-table tbody tr:hover td{background:color-mix(in srgb,var(--vr-accent) 4%,transparent)}
+.vr-table tr.vr-hl td{background:var(--vr-accent-soft)}
+.vr-table tr.vr-bad td{background:#FDEEEE}
+body.body--dark .vr-table tr.vr-bad td{background:#3A1F25}
+.vr-right{text-align:right !important}
+.vr-nowrap{white-space:nowrap}
+
+/* ---------------------------------------------------------------- forms */
+.vr-field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--vr-graphite)}
+.vr-input{height:44px;padding:0 14px;border:1px solid var(--vr-rule-strong);border-radius:12px;background:var(--vr-paper);
+  font:inherit;font-size:15px;color:var(--vr-ink);transition:border-color .16s,box-shadow .16s}
+.vr-input:focus{outline:0 !important;border-color:var(--vr-accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--vr-accent) 18%,transparent)}
+textarea.vr-input{height:auto;padding:12px 14px}
+kbd{font-family:var(--vr-mono);font-size:12px;padding:2px 8px;border:1px solid var(--vr-rule-strong);
+  border-bottom-width:2px;border-radius:6px;background:var(--vr-paper);color:var(--vr-ink)}
+
+/* ---------------------------------------------------------------- progress and checks */
+.vr-bar{height:8px;border-radius:8px;background:var(--vr-rule);overflow:hidden}
+.vr-bar>div{height:8px;border-radius:8px;background:linear-gradient(90deg,var(--vr-accent),#A79CFF);transition:width .4s ease}
+.vr-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  background:var(--vr-sheet);border:1px solid var(--vr-border);border-radius:16px;overflow:hidden;box-shadow:var(--vr-shadow-sm)}
+.vr-step{padding:15px 18px 14px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--vr-rule);
+  border-bottom:3px solid var(--vr-rule);transition:background .2s,border-color .2s}
+.vr-step:last-child{border-right:0}
+.vr-step-done{border-bottom-color:var(--vr-accent)}
+.vr-step-now{background:var(--vr-accent-soft);border-bottom-color:var(--vr-accent)}
+.vr-step-failed{background:#FDEEEE;border-bottom-color:#DC2626}
+body.body--dark .vr-step-failed{background:#3A1F25}
+.vr-check{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--vr-rule-faint)}
+.vr-check-icon{flex:0 0 26px;height:26px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;border:1.5px solid;font-size:12.5px;font-weight:700}
+.vr-feed-item{display:flex;gap:12px;padding:11px 22px;border-bottom:1px solid var(--vr-rule-faint)}
+.vr-note{display:flex;flex-direction:column;gap:4px;padding:13px 16px;background:var(--vr-ground);border:1px solid var(--vr-rule-faint);border-radius:12px}
+.vr-empty{display:flex;align-items:center;gap:10px;padding:16px;border:1.5px dashed var(--vr-rule-strong);
+  border-radius:12px;font-size:14px;color:var(--vr-graphite)}
+.vr-dropzone{display:flex;flex-wrap:wrap;align-items:center;gap:24px;padding:24px 28px;background:var(--vr-sheet);
+  border:1.5px dashed var(--vr-rule-strong);border-radius:18px;transition:border-color .16s,background .16s}
+.vr-dropzone:hover{border-color:var(--vr-accent);background:color-mix(in srgb,var(--vr-accent) 3%,var(--vr-sheet))}
+
+/* ---------------------------------------------------------------- documents and code */
+.vr-invoice{background:#FFFFFF;color:#1B1F2E;border:1px solid var(--vr-rule);border-radius:10px;padding:28px 30px;font-size:13px;line-height:1.5}
+.vr-invoice mark{background:#FFE48A;padding:1px 4px;border-radius:3px;outline:2px solid #DC2626}
+.vr-pre{margin:0;padding:16px 18px;background:#0F1222;color:#E6E9F5;border-radius:12px;font-size:13px;
+  line-height:1.65;overflow-x:auto;font-family:var(--vr-mono);white-space:pre-wrap}
+.vr-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------------------------------------------------------------- Quasar controls, restyled to match */
+.q-btn,.q-field,.q-item,.q-tab,.q-notification,.q-menu,.q-uploader{font-family:var(--vr-font)}
+.q-field--outlined .q-field__control{border-radius:12px;background:var(--vr-paper)}
+.q-field--outlined .q-field__control:before{border-color:var(--vr-rule-strong)}
+.q-field--outlined:hover .q-field__control:before{border-color:var(--vr-graphite)}
+.q-field__native,.q-field__input{color:var(--vr-ink)}
+.q-field__label{color:var(--vr-graphite)}
+.q-uploader{box-shadow:none;border-radius:14px}
+.q-notification{font-size:15px;border-radius:12px}
+.q-btn.vr-nav-link{text-transform:none;font-weight:500}
+.q-btn.vr-nav-link .q-btn__content{justify-content:flex-start;width:100%}
+.q-btn.vr-nav-link .q-focus-helper{display:none}
+.q-btn.vr-nav-link{color:var(--vr-rail-text) !important}
+.q-btn.vr-nav-link:hover{color:#fff !important}
+.q-btn.vr-nav-link .q-icon{color:inherit;opacity:.85}

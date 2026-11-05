@@ -20,19 +20,23 @@ from nicegui import app, ui
 STATIC = Path(__file__).resolve().parent / "static"
 
 # --------------------------------------------------------------------------
-# Tokens (mirror the "Design tokens" artboard)
+# Tokens
 # --------------------------------------------------------------------------
 LIGHT = {
-    "ground": "#ECEFE9", "sheet": "#FBFCF9", "ink": "#1A2430", "graphite": "#4A5560",
-    "rule": "#D3DED0", "rule-faint": "#E2EADF", "rule-strong": "#9FB39B", "border": "#C5D3C2",
-    "rail": "#17222D", "rail-text": "#C9D3CC", "highlighter": "#E4F07A", "wash": "#F7FAD8",
-    "paper": "#FFFFFF", "muted": "#5A6570", "body2": "#3B4A59",
+    "ground": "#F4F5FA", "sheet": "#FFFFFF", "ink": "#0F1222", "graphite": "#5A6178",
+    "rule": "#E5E8F1", "rule-faint": "#EEF0F7", "rule-strong": "#CBD0E0", "border": "#E1E4EE",
+    "rail": "#0A0D1A", "rail-text": "#9AA2BC", "accent": "#5B4BDB", "accent-soft": "#EFECFF",
+    "on-accent": "#FFFFFF", "paper": "#FFFFFF", "muted": "#5A6178", "body2": "#363C55",
+    "shadow-sm": "0 1px 2px rgba(15,18,34,.05), 0 10px 30px -16px rgba(15,18,34,.16)",
+    "shadow-md": "0 2px 4px rgba(15,18,34,.05), 0 18px 44px -20px rgba(15,18,34,.26)",
 }
 DARK = {
-    "ground": "#10171E", "sheet": "#18222C", "ink": "#E6ECE4", "graphite": "#A9B6AE",
-    "rule": "#2C3B37", "rule-faint": "#24312F", "rule-strong": "#4A6152", "border": "#33443F",
-    "rail": "#0B1117", "rail-text": "#B6C2BA", "highlighter": "#D6E464", "wash": "#26301F",
-    "paper": "#F4F6F2", "muted": "#9AA7A0", "body2": "#C3CDC6",
+    "ground": "#080B16", "sheet": "#111529", "ink": "#ECEEF8", "graphite": "#9AA2BC",
+    "rule": "#222845", "rule-faint": "#191E36", "rule-strong": "#3A426A", "border": "#232947",
+    "rail": "#060812", "rail-text": "#8E96B2", "accent": "#8E80FF", "accent-soft": "#1D1A45",
+    "on-accent": "#0B0820", "paper": "#171C35", "muted": "#9AA2BC", "body2": "#C5CADD",
+    "shadow-sm": "0 1px 2px rgba(0,0,0,.45), 0 10px 30px -16px rgba(0,0,0,.7)",
+    "shadow-md": "0 2px 4px rgba(0,0,0,.45), 0 18px 44px -20px rgba(0,0,0,.8)",
 }
 
 # Agreed colours (todo.md) for borders and icons; darker "text" shades pass 4.5:1.
@@ -59,8 +63,8 @@ CHECK_STATES = {
     "pass": {"label": "Pass", "icon": "\u2713", "base": "#16A34A", "text": "#15803D", "tint": "#ECF6EE"},
     "fail": {"label": "Fail", "icon": "\u2715", "base": "#DC2626", "text": "#B91C1C", "tint": "#FBEDEC"},
     "skipped": {"label": "Skipped", "icon": "\u2013", "base": "#6B7280", "text": "#4B5563", "tint": "#F0F1F2"},
-    "running": {"label": "Running", "icon": "\u2026", "base": "#1A2430", "text": "#1A2430", "tint": "#E4F07A"},
-    "waiting": {"label": "Waiting", "icon": "", "base": "#B7C5B4", "text": "#5A6570", "tint": "transparent"},
+    "running": {"label": "Running", "icon": "…", "base": "#5B4BDB", "text": "#4B3DC4", "tint": "#EFECFF"},
+    "waiting": {"label": "Waiting", "icon": "", "base": "#C3C8D8", "text": "#5A6178", "tint": "transparent"},
 }
 ERROR_LABELS = {
     "WRONG_AMOUNT": "Wrong amount", "QUANTITY_NOT_RECEIVED": "Quantity not received",
@@ -99,9 +103,14 @@ NAV = [  # (key, label, path, svg path data)
     ("eval", "Eval results", "/eval", '<path d="M3 3v18h18"/><path d="M8 17V11"/><path d="M13 17V7"/><path d="M18 17v-4"/>'),
 ]
 
-LOGO_SVG = ('<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">'
-            '<rect x="1.5" y="1.5" width="27" height="27" rx="4" fill="none" stroke="var(--tm-highlighter)" stroke-width="2.5"/>'
-            '<path d="M8 15.5l4.5 4.5L22 9.5" fill="none" stroke="var(--tm-highlighter)" stroke-width="3" '
+BRAND = "Vera"
+TAGLINE = "Invoice verification"
+
+LOGO_SVG = ('<svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true"><defs>'
+            '<linearGradient id="vera-g" x1="4" y1="2" x2="34" y2="36" gradientUnits="userSpaceOnUse">'
+            '<stop offset="0" stop-color="#9C90FF"/><stop offset="1" stop-color="#4B3DC4"/></linearGradient></defs>'
+            '<rect width="38" height="38" rx="12" fill="url(#vera-g)"/>'
+            '<path d="M10.5 15l7.2 11 10-14.5" fill="none" stroke="#fff" stroke-width="3.4" '
             'stroke-linecap="round" stroke-linejoin="round"/></svg>')
 
 
@@ -162,140 +171,10 @@ def esc(text: Any) -> str:
 # CSS
 # --------------------------------------------------------------------------
 def _vars(tokens: dict[str, str]) -> str:
-    return "".join(f"--tm-{k}:{v};" for k, v in tokens.items())
+    return "".join(f"--vr-{k}:{v};" for k, v in tokens.items())
 
 
-CSS = f"""
-@font-face{{font-family:'Atkinson Hyperlegible Next';font-weight:400;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-next-latin-400-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Atkinson Hyperlegible Next';font-weight:500;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-next-latin-500-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Atkinson Hyperlegible Next';font-weight:700;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-next-latin-700-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Atkinson Hyperlegible Mono';font-weight:400;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-mono-latin-400-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Atkinson Hyperlegible Mono';font-weight:500;font-display:swap;src:url('/static/fonts/atkinson-hyperlegible-mono-latin-500-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Zilla Slab';font-weight:500;font-display:swap;src:url('/static/fonts/zilla-slab-latin-500-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Zilla Slab';font-weight:600;font-display:swap;src:url('/static/fonts/zilla-slab-latin-600-normal.woff2') format('woff2')}}
-@font-face{{font-family:'Zilla Slab';font-weight:700;font-display:swap;src:url('/static/fonts/zilla-slab-latin-700-normal.woff2') format('woff2')}}
-
-:root{{{_vars(LIGHT)}}}
-body.body--dark{{{_vars(DARK)}}}
-body{{margin:0;background:var(--tm-ground);color:var(--tm-ink);
-  font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;font-size:15px;line-height:1.45}}
-.nicegui-content{{padding:0 !important;gap:0 !important}}
-a{{color:var(--tm-ink)}} a:hover{{color:var(--tm-body2)}}
-:focus-visible{{outline:3px solid var(--tm-ink) !important;outline-offset:2px}}
-
-.tm-app{{display:flex;flex-wrap:wrap;min-height:100vh;width:100%;background:var(--tm-ground)}}
-.tm-rail{{flex:1 1 232px;background:var(--tm-rail);padding:24px 16px;display:flex;flex-direction:column;gap:28px;box-sizing:border-box}}
-.tm-brand{{display:flex;align-items:center;gap:10px;text-decoration:none;color:#F4F7F2;padding:0 8px}}
-.tm-brand span{{font-family:'Zilla Slab',serif;font-size:25px;font-weight:700;letter-spacing:-0.2px}}
-.tm-nav{{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;flex-direction:column;gap:4px}}
-.tm-nav-link{{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:6px;
-  color:var(--tm-rail-text);text-decoration:none;font-size:15px}}
-.tm-nav-link:hover{{background:#22303C;color:#FFFFFF}}
-.tm-nav-link[aria-current="page"]{{background:var(--tm-highlighter);color:#17222D;font-weight:700}}
-.tm-nav-count{{margin-left:auto;font-size:12px;font-weight:700;background:#F4F7F2;color:#17222D;border-radius:10px;padding:1px 8px}}
-.tm-rail-note{{margin-top:auto;padding:14px 12px;border:1px solid #2E3D49;border-radius:6px;font-size:13px;line-height:1.5;color:#AEBAB2}}
-.tm-main{{flex:999 1 560px;min-width:0;padding:28px 40px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:22px}}
-@media (max-width:700px){{.tm-main{{padding:20px 16px 40px}} .tm-nav{{flex-direction:row}}}}
-
-.tm-header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}}
-.tm-h1{{margin:0;font-family:'Zilla Slab',serif;font-size:36px;font-weight:600;letter-spacing:-0.3px;line-height:1.15}}
-.tm-h2{{margin:0;font-family:'Zilla Slab',serif;font-size:22px;font-weight:600}}
-.tm-h3{{margin:0;font-family:'Zilla Slab',serif;font-size:20px;font-weight:600}}
-.tm-sub{{margin:4px 0 0;font-size:15px;color:var(--tm-graphite)}}
-.tm-small{{font-size:13px;color:var(--tm-graphite)}}
-.tm-crumb{{margin:0 0 4px;font-size:14px;color:var(--tm-graphite)}}
-.tm-num{{font-family:'Atkinson Hyperlegible Mono',monospace;font-size:13px}}
-.tm-card{{background:var(--tm-sheet);border:1px solid var(--tm-border);border-radius:8px}}
-.tm-card-head{{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:10px;
-  padding:16px 18px;border-bottom:2px solid var(--tm-rule-strong)}}
-.tm-pad{{padding:18px 20px}}
-.tm-row{{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}}
-.tm-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}}
-
-.tm-pill{{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px;background:var(--tm-sheet);
-  border:1px solid var(--tm-border);border-radius:18px;font-size:14px}}
-.tm-pill-strong{{border:2px solid var(--tm-ink);background:transparent;font-weight:700}}
-.tm-dot{{width:9px;height:9px;border-radius:5px;display:inline-block}}
-
-.tm-btn{{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;
-  border:2px solid var(--tm-ink);border-radius:6px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;
-  text-decoration:none;background:var(--tm-sheet);color:var(--tm-ink);white-space:nowrap}}
-.tm-btn:hover{{background:var(--tm-wash)}}
-.tm-btn-primary{{background:var(--tm-ink);color:var(--tm-ground)}}
-.tm-btn-primary:hover{{background:var(--tm-body2);color:var(--tm-ground)}}
-.tm-btn-small{{min-height:34px;padding:0 14px;font-size:13px;border-width:1.5px}}
-.tm-btn[disabled]{{opacity:.45;cursor:not-allowed}}
-
-.tm-badge{{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 6px;border:1.5px solid;
-  border-radius:4px;font-size:13px;font-weight:700;white-space:nowrap}}
-.tm-badge-icon{{width:18px;text-align:center}}
-.tm-tag{{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:2px 8px;
-  border-radius:4px;border:1.5px solid;white-space:nowrap}}
-.tm-tag-wrap{{white-space:normal;align-items:flex-start;text-align:left;line-height:1.35;max-width:100%}}
-.tm-role{{font-size:12px;font-weight:700;padding:1px 7px;border-radius:4px;border:1.5px solid var(--tm-ink);white-space:nowrap}}
-.tm-role-extractor{{background:var(--tm-sheet);color:var(--tm-ink)}}
-.tm-role-verifier{{background:var(--tm-ink);color:var(--tm-ground)}}
-.tm-role-reporter{{background:var(--tm-highlighter);color:#17222D}}
-
-.tm-stamp{{display:inline-flex;flex-direction:column;align-items:center;gap:2px;transform:rotate(-3deg);
-  border:4px double;border-radius:6px;padding:12px 22px 10px}}
-.tm-stamp-word{{display:flex;align-items:center;gap:10px;font-family:'Zilla Slab',serif;font-size:44px;
-  font-weight:700;letter-spacing:3px;line-height:1;text-transform:uppercase}}
-.tm-stamp-small .tm-stamp-word{{font-size:22px;letter-spacing:2px}}
-.tm-stamp-small{{padding:6px 14px;border-width:3px}}
-
-.tm-table-wrap{{overflow-x:auto}}
-.tm-table{{width:100%;border-collapse:collapse}}
-.tm-table th{{text-align:left;font-weight:500;font-size:13px;color:var(--tm-graphite);padding:10px 12px;
-  border-bottom:2px solid var(--tm-rule-strong);white-space:nowrap}}
-.tm-table td{{padding:9px 12px;border-bottom:1px solid var(--tm-rule);font-size:14px;vertical-align:middle}}
-.tm-table td+td,.tm-table th+th{{border-left:1px solid var(--tm-rule-faint)}}
-.tm-table tr.tm-hl td{{background:var(--tm-wash)}}
-.tm-table tr.tm-bad td{{background:#FBEDEC}}
-body.body--dark .tm-table tr.tm-bad td{{background:#3A1F1F}}
-.tm-right{{text-align:right !important}}
-.tm-nowrap{{white-space:nowrap}}
-
-.tm-field{{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--tm-graphite)}}
-.tm-input{{height:42px;padding:0 10px;border:1px solid var(--tm-rule-strong);border-radius:6px;
-  background:var(--tm-paper);font:inherit;font-size:15px;color:#1A2430}}
-textarea.tm-input{{height:auto;padding:10px 12px}}
-
-.tm-bar{{height:10px;border-radius:5px;background:var(--tm-rule);overflow:hidden}}
-.tm-bar>div{{height:10px;background:var(--tm-ink)}}
-.tm-steps{{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  background:var(--tm-sheet);border:1px solid var(--tm-border);border-radius:8px;overflow:hidden}}
-.tm-step{{padding:14px 16px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--tm-rule);
-  border-bottom:4px solid var(--tm-rule)}}
-.tm-step-done{{border-bottom-color:var(--tm-ink)}}
-.tm-step-now{{background:var(--tm-wash);border-bottom-color:#C9D63A}}
-.tm-step-failed{{background:#FBEDEC;border-bottom-color:#DC2626}}
-.tm-check{{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--tm-rule-faint)}}
-.tm-check-icon{{flex:0 0 26px;height:26px;display:inline-flex;align-items:center;justify-content:center;
-  border-radius:13px;border:2px solid;font-size:13px;font-weight:700}}
-.tm-feed-item{{display:flex;gap:12px;padding:10px 20px;border-bottom:1px solid var(--tm-rule-faint)}}
-.tm-note{{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--tm-ground);border-radius:6px}}
-.tm-empty{{display:flex;align-items:center;gap:10px;padding:14px;border:1.5px dashed var(--tm-rule-strong);
-  border-radius:6px;font-size:14px;color:var(--tm-graphite)}}
-.tm-dropzone{{display:flex;flex-wrap:wrap;align-items:center;gap:24px;padding:22px 26px;background:var(--tm-sheet);
-  border:2px dashed var(--tm-rule-strong);border-radius:8px}}
-.tm-invoice{{background:#FFFFFF;color:#222;border:1px solid var(--tm-rule);padding:28px 30px;font-size:13px;line-height:1.5}}
-.tm-invoice mark{{background:#E4F07A;padding:1px 4px;outline:2px solid #DC2626}}
-.tm-pre{{margin:0;padding:14px 16px;background:#17222D;color:#E6ECE4;border-radius:6px;font-size:13px;
-  line-height:1.6;overflow-x:auto;font-family:'Atkinson Hyperlegible Mono',monospace;white-space:pre-wrap}}
-kbd{{font-family:'Atkinson Hyperlegible Mono',monospace;font-size:13px;padding:2px 8px;border:1.5px solid var(--tm-ink);
-  border-bottom-width:3px;border-radius:4px;background:var(--tm-paper);color:#1A2430}}
-.tm-sr{{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
-dl{{margin:0}} dd{{margin:2px 0 0}}
-
-/* Quasar inputs (ui.select, ui.input) restyled to match */
-.q-field--outlined .q-field__control{{border-radius:6px;background:var(--tm-paper)}}
-.q-field--outlined .q-field__control:before{{border-color:var(--tm-rule-strong)}}
-.q-field__native,.q-field__label,.q-item{{font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif}}
-.q-field__native{{color:#1A2430}}
-.q-uploader{{box-shadow:none}}
-.q-notification{{font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;font-size:15px}}
-"""
+STYLESHEET = STATIC / "vera.css"
 
 
 def setup() -> None:
@@ -304,8 +183,10 @@ def setup() -> None:
 
 
 def _head() -> None:
-    ui.add_head_html(f"<style>{CSS}</style>")
-    ui.colors(primary="#1A2430", secondary="#4A5560", accent="#E4F07A", positive="#15803D",
+    version = int(STYLESHEET.stat().st_mtime)  # a changed stylesheet is fetched again
+    ui.add_head_html(f"<style>:root{{{_vars(LIGHT)}}}body.body--dark{{{_vars(DARK)}}}</style>"
+                     f'<link rel="stylesheet" href="/static/vera.css?v={version}">')
+    ui.colors(primary="#5B4BDB", secondary="#5A6178", accent="#8E80FF", positive="#15803D",
               negative="#B91C1C", warning="#B45309", info="#1D4ED8")
 
 
@@ -328,21 +209,24 @@ CROSS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B9
 def shell(active: str, status: Any, open_cases: int | None = None) -> Iterator[ui.element]:
     """The app frame every page uses. Yields the main content column."""
     _head()
-    with ui.element("div").classes("tm-app"):
-        with ui.element("nav").classes("tm-rail").props('aria-label="Main"'):
-            html(f'<a class="tm-brand" href="/">{LOGO_SVG}<span>Tickmark</span></a>')
+    with ui.element("div").classes("vr-app"):
+        with ui.element("nav").classes("vr-rail").props('aria-label="Main"'):
+            html(f'<a class="vr-brand" href="/">{LOGO_SVG}<span class="vr-brand-text">'
+                 f'<span class="vr-brand-name">{BRAND}</span><span class="vr-brand-tag">{TAGLINE}</span></span></a>')
             items = []
             for k, label, path, icon in NAV:
                 current = ' aria-current="page"' if k == active else ""
-                count = (f'<span class="tm-nav-count">{open_cases}</span>'
+                count = (f'<span class="vr-nav-count">{open_cases}</span>'
                          if k == "review" and open_cases else "")
-                items.append(f'<li><a class="tm-nav-link" href="{path}"{current}>{svg_icon(icon)}'
+                items.append(f'<li><a class="vr-nav-link" href="{path}"{current}>{svg_icon(icon)}'
                              f'<span>{label}</span>{count}</a></li>')
-            html('<ul class="tm-nav">' + "".join(items) + "</ul>")
-            dark = ui.dark_mode()
-            ui.button("Switch light and dark", on_click=dark.toggle).props("flat no-caps").classes(
-                "tm-nav-link").style("justify-content:flex-start;width:100%")
-            html('<div class="tm-rail-note">Client data stays on this machine. '
-                 'Every tool call the agent makes is logged.</div>')
-        with ui.element("main").classes("tm-main") as main:
+            html('<div><div class="vr-nav-label">Workspace</div><ul class="vr-nav">' + "".join(items) + "</ul></div>")
+            with ui.element("div").classes("vr-rail-foot"):
+                dark = ui.dark_mode()
+                ui.button("Light or dark", icon="contrast", on_click=dark.toggle).props("flat no-caps").classes(
+                    "vr-nav-link").style("width:100%")
+                html(f'<div class="vr-rail-note"><span class="vr-rail-lock">{LOCK}</span><span>'
+                     '<strong>Private by design</strong>Client data stays on this machine. '
+                     'Every tool call the agent makes is logged.</span></div>')
+        with ui.element("main").classes("vr-main") as main:
             yield main

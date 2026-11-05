@@ -27,7 +27,7 @@ async def _render(case_id: str | None, status_filter: str, error_filter: str) ->
         all_cases = await svc.list_cases()
         waiting = len([c for c in all_cases if key(c.status) == "OPEN"])
 
-        with ui.element("div").classes("tm-header"):
+        with ui.element("div").classes("vr-header"):
             html(page_header("Review queue", f"{len(all_cases)} cases, {waiting} waiting for a decision. "
                                              "Only people can set a final status here; the agent cannot."))
             with ui.element("div").style("display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end"):
@@ -45,32 +45,32 @@ async def _render(case_id: str | None, status_filter: str, error_filter: str) ->
                  if (status_filter == "ALL" or key(c.status) == status_filter)
                  and (error_filter == "ALL" or key(c.error_type) == error_filter)]
 
-        with ui.element("div").classes("tm-row"):
+        with ui.element("div").classes("vr-row"):
             items = []
             for c in shown:
                 sev = SEVERITIES.get(key(c.severity), SEVERITIES["high"])
                 current = c.case_id == case_id
                 items.append(
-                    f'<li style="border-bottom:1px solid var(--tm-rule);box-shadow:inset 4px 0 0 {sev["base"]};'
-                    f'{"background:var(--tm-wash)" if current else ""}">'
+                    f'<li style="border-bottom:1px solid var(--vr-rule);box-shadow:inset 4px 0 0 {sev["base"]};'
+                    f'{"background:var(--vr-accent-soft)" if current else ""}">'
                     f'<a href="/review/{esc(c.case_id)}?status={status_filter}&error={error_filter}" '
                     f'{"aria-current=page" if current else ""} style="display:flex;gap:12px;padding:12px 18px 12px 20px;'
-                    f'text-decoration:none;color:var(--tm-ink)"><span aria-hidden="true" style="margin-top:2px;color:{sev["text"]}">{sev["icon"]}</span>'
+                    f'text-decoration:none;color:var(--vr-ink)"><span aria-hidden="true" style="margin-top:2px;color:{sev["text"]}">{sev["icon"]}</span>'
                     f'<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">'
                     f'<span style="display:flex;justify-content:space-between;gap:10px"><strong>{esc(error_label(c.error_type))}</strong>'
-                    f'<span class="tm-small tm-nowrap">{CASE_STATUS_LABELS.get(key(c.status), c.status)}</span></span>'
-                    f'<span style="font-size:13px;color:var(--tm-body2)">{esc(c.vendor_name)}, <span class="tm-num" style="font-size:12px">{esc(c.doc_id)}</span></span>'
+                    f'<span class="vr-small vr-nowrap">{CASE_STATUS_LABELS.get(key(c.status), c.status)}</span></span>'
+                    f'<span style="font-size:13px;color:var(--vr-body2)">{esc(c.vendor_name)}, <span class="vr-num" style="font-size:12px">{esc(c.doc_id)}</span></span>'
                     f'<span style="font-size:12px;font-weight:700;color:{sev["text"]}">{sev["label"]} severity</span></span></a></li>')
-            html('<section aria-label="Cases" class="tm-card" style="width:100%"><div class="tm-card-head"><h2 class="tm-h2">Cases</h2>'
-                 '<span class="tm-small">Highest severity first</span></div>'
+            html('<section aria-label="Cases" class="vr-card" style="width:100%"><div class="vr-card-head"><h2 class="vr-h2">Cases</h2>'
+                 '<span class="vr-small">Highest severity first</span></div>'
                  + (f'<ul style="list-style:none;margin:0;padding:0">{"".join(items)}</ul>' if items
-                    else '<div class="tm-empty" style="margin:16px">No cases match these filters.</div>')
+                    else '<div class="vr-empty" style="margin:16px">No cases match these filters.</div>')
                  + "</section>").style("flex:2 1 380px;min-width:0;display:flex")
 
             with ui.element("section").style("flex:3 1 520px;min-width:0;display:flex;flex-direction:column;gap:22px") \
                     .props('aria-label="Case detail"'):
                 if case_id is None:
-                    html('<div class="tm-empty">No cases yet. Cases appear when a verdict is not "Matched".</div>')
+                    html('<div class="vr-empty">No cases yet. Cases appear when a verdict is not "Matched".</div>')
                     return
                 await _case_detail(case_id)
 
@@ -79,29 +79,29 @@ async def _case_detail(case_id: str) -> None:
     c = await svc.get_case(case_id)
     closed = key(c.status) != "OPEN" and key(c.status) != "ESCALATED"
 
-    html(f'<div class="tm-card" style="padding:22px 24px;display:flex;flex-direction:column;gap:16px">'
+    html(f'<div class="vr-card" style="padding:22px 24px;display:flex;flex-direction:column;gap:16px">'
          f'<div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:flex-start"><div>'
-         f'<p class="tm-small" style="margin:0;font-size:14px">Case <span class="tm-num">{esc(c.case_id)}</span>, '
+         f'<p class="vr-small" style="margin:0;font-size:14px">Case <span class="vr-num">{esc(c.case_id)}</span>, '
          f'opened {fmt_date(c.created_at)} at {fmt_time(c.created_at)[:5]}</p>'
-         f'<h2 style="margin:4px 0 0;font-family:Zilla Slab,serif;font-size:28px;font-weight:600">'
+         f'<h2 style="margin:4px 0 0;font-family:var(--vr-display);font-size:28px;font-weight:600">'
          f'{esc(c.vendor_name)}: {esc(error_label(c.error_type).lower())}</h2></div>{stamp(c.verdict, small=True)}</div>'
          f'<p style="margin:0;font-size:16px;line-height:1.6;max-width:70ch">{esc(c.summary)}</p>'
          f'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">'
          f'{severity_tag(c.severity, (key(c.severity) or "").capitalize() + ": " + error_label(c.error_type).lower())}'
-         f'<span class="tm-tag" style="border-color:var(--tm-border);font-weight:400">Amount <span class="tm-num">{eur(c.amount, c.currency)}</span></span>'
-         f'<span class="tm-tag" style="border-color:var(--tm-border);font-weight:400">{c.checks_passed} of {c.checks_total} checks passed</span>'
+         f'<span class="vr-tag" style="border-color:var(--vr-border);font-weight:400">Amount <span class="vr-num">{eur(c.amount, c.currency)}</span></span>'
+         f'<span class="vr-tag" style="border-color:var(--vr-border);font-weight:400">{c.checks_passed} of {c.checks_total} checks passed</span>'
          f'<a href="/verdict/{esc(c.doc_id)}" style="font-size:13px;font-weight:700">Open full verdict</a></div></div>')
 
     verdict = await svc.get_verdict(c.doc_id)
-    html('<section aria-label="Evidence" class="tm-card"><div class="tm-card-head"><h2 class="tm-h3">Evidence</h2>'
-         '<span class="tm-small">Exactly as the agent saw it, sensitive fields masked</span></div>'
+    html('<section aria-label="Evidence" class="vr-card"><div class="vr-card-head"><h2 class="vr-h3">Evidence</h2>'
+         '<span class="vr-small">Exactly as the agent saw it, sensitive fields masked</span></div>'
          + (evidence_table(getattr(verdict, "evidence", None)) if verdict else
-            '<div class="tm-empty" style="margin:16px">The verdict for this invoice is not available.</div>')
+            '<div class="vr-empty" style="margin:16px">The verdict for this invoice is not available.</div>')
          + "</section>")
 
     # ---------- decision ----------
-    with ui.element("div").classes("tm-card").style("padding:22px 24px;display:flex;flex-direction:column;gap:14px"):
-        html('<h3 class="tm-h3">Your decision</h3>')
+    with ui.element("div").classes("vr-card").style("padding:22px 24px;display:flex;flex-direction:column;gap:14px"):
+        html('<h3 class="vr-h3">Your decision</h3>')
         if closed and c.decision:
             d = c.decision
             html(f'<p style="margin:0;font-size:15px"><strong>{CASE_STATUS_LABELS.get(key(d.status), d.status)}</strong> by '
@@ -135,14 +135,14 @@ async def _case_detail(case_id: str) -> None:
                     ui.notify("Decision recorded.", type="positive")
                     ui.navigate.to(f"/review/{case_id}")
 
-                ui.button("Record decision", on_click=record).props("no-caps unelevated").classes("tm-btn tm-btn-primary")
+                ui.button("Record decision", on_click=record).props("no-caps unelevated").classes("vr-btn vr-btn-primary")
 
     # ---------- notes + evidence pack ----------
-    with ui.element("div").classes("tm-row"):
-        with ui.element("div").classes("tm-card tm-pad").style("flex:3 1 340px;min-width:0;display:flex;flex-direction:column;gap:12px"):
-            html('<h3 class="tm-h3">Notes</h3>')
-            notes = "".join(f'<li style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--tm-rule-faint)">'
-                            f'<span class="tm-num" style="flex:0 0 44px;color:var(--tm-muted)">{fmt_time(n.ts)[:5]}</span>'
+    with ui.element("div").classes("vr-row"):
+        with ui.element("div").classes("vr-card vr-pad").style("flex:3 1 340px;min-width:0;display:flex;flex-direction:column;gap:12px"):
+            html('<h3 class="vr-h3">Notes</h3>')
+            notes = "".join(f'<li style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--vr-rule-faint)">'
+                            f'<span class="vr-num" style="flex:0 0 44px;color:var(--vr-muted)">{fmt_time(n.ts)[:5]}</span>'
                             f'<span style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:13px">{esc(n.author)}</strong>'
                             f'<span style="font-size:14px;line-height:1.5">{esc(n.text)}</span></span></li>' for n in c.notes)
             html(f'<ol style="list-style:none;margin:0;padding:0">{notes}</ol>')
@@ -158,10 +158,10 @@ async def _case_detail(case_id: str) -> None:
                 await svc.add_case_note(case_id, note.value, "Reviewer")
                 ui.navigate.to(f"/review/{case_id}")
 
-            ui.button("Add note", on_click=add).props("no-caps flat").classes("tm-btn").style("align-self:flex-start")
+            ui.button("Add note", on_click=add).props("no-caps flat").classes("vr-btn").style("align-self:flex-start")
 
-        with ui.element("div").classes("tm-card tm-pad").style("flex:2 1 240px;min-width:0;display:flex;flex-direction:column;gap:12px"):
-            html('<h3 class="tm-h3">Evidence pack</h3><p style="margin:0;font-size:14px;line-height:1.5;color:var(--tm-body2)">'
+        with ui.element("div").classes("vr-card vr-pad").style("flex:2 1 240px;min-width:0;display:flex;flex-direction:column;gap:12px"):
+            html('<h3 class="vr-h3">Evidence pack</h3><p style="margin:0;font-size:14px;line-height:1.5;color:var(--vr-body2)">'
                  'The invoice, extracted fields, every check, every tool call and the decision, as one working paper.</p>')
 
             async def export(fmt: str) -> None:
@@ -172,5 +172,5 @@ async def _case_detail(case_id: str) -> None:
                     return
                 ui.download.file(path, path.name)
 
-            ui.button("Export as PDF", on_click=lambda: export("pdf")).props("no-caps unelevated").classes("tm-btn tm-btn-primary")
-            ui.button("Export as Excel", on_click=lambda: export("xlsx")).props("no-caps flat").classes("tm-btn")
+            ui.button("Export as PDF", on_click=lambda: export("pdf")).props("no-caps unelevated").classes("vr-btn vr-btn-primary")
+            ui.button("Export as Excel", on_click=lambda: export("xlsx")).props("no-caps flat").classes("vr-btn")

@@ -1,6 +1,6 @@
-# Invoice Verification Agent
+# Vera: invoice verification agent
 
-A local AI agent that checks an invoice against a company's transaction records and Dutch VAT rules. The whole workflow is English-only: invoices, prompts, tool outputs and the UI. The records sit behind MCP servers, so the agent can only call narrow, read-only tools. Everything runs on your own machine, so no financial data leaves it.
+Vera is a local AI agent that checks an invoice against a company's transaction records and Dutch VAT rules. The whole workflow is English-only: invoices, prompts, tool outputs and the UI. The records sit behind MCP servers, so the agent can only call narrow, read-only tools. Everything runs on your own machine, so no financial data leaves it.
 
 See [idea.md](idea.md) for the design and [todo.md](todo.md) for the task split.
 
