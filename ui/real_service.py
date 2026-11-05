@@ -15,6 +15,7 @@ The conversions in one place:
 """
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 from collections.abc import AsyncIterator
 from datetime import datetime
@@ -314,6 +315,25 @@ async def verify(doc_id: str) -> AsyncIterator[Any]:
             yield _ns(_event_view(event, seen))
     finally:
         _running.discard(doc_id)
+
+
+async def replay(doc_id: str, speed: float = 1.0) -> AsyncIterator[Any]:
+    """Play back the recorded events of the last run at about their original pace (long pauses are cut short).
+
+    Nothing is run: no model, no servers, no new audit entries. It is the demo's fallback when the model is slow.
+    """
+    events = backend.read_run(doc_id)
+    if not events:
+        raise ValueError(f"There is no recording of {doc_id} yet. Verify it once first.")
+    seen: list = []
+    previous = None
+    for event in events:
+        moment = datetime.fromisoformat(event.ts)
+        if previous is not None:
+            await asyncio.sleep(min(max((moment - previous).total_seconds(), 0.12), 1.8) / speed)
+        previous = moment
+        seen.append(event)
+        yield _ns(_event_view(event, seen))
 
 
 async def get_verdict(doc_id: str) -> Any | None:

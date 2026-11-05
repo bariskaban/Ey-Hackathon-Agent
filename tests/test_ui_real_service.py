@@ -113,3 +113,20 @@ def test_an_evaluation_report_becomes_the_rows_the_eval_page_draws():
     assert shown.report_id == "r1" and shown.sample is False and shown.duration_s == 90
     assert shown.rows[0].doc_id == "INV-001" and shown.rows[0].planted_error == "WRONG_AMOUNT"
     assert shown.rows[0].runs == ["MISMATCH"] * 3 and shown.rows[0].caught_by == "po_match"
+
+
+def test_a_replay_plays_the_recorded_run_without_running_anything(inbox, case):
+    entry = case("quantity_not_received")
+    doc_id = entry["invoice_id"]
+
+    async def after(events):
+        before = len(await ui_service.get_audit_log(doc_id=doc_id))
+        replayed = [e async for e in ui_service.replay(doc_id, speed=1000)]
+        with pytest.raises(ValueError, match="no recording"):
+            [e async for e in ui_service.replay("INV-999")]
+        return replayed, before, len(await ui_service.get_audit_log(doc_id=doc_id))
+
+    events, (replayed, before, after_count) = run_scenario(entry, after)
+    assert [e.type for e in replayed] == [e.type for e in events]
+    assert replayed[-1].verdict.verdict == "MISMATCH" and replayed[-1].verdict.discrepancies
+    assert after_count == before  # nothing was run, so nothing new was logged

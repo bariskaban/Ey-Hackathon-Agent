@@ -25,7 +25,7 @@ from types import SimpleNamespace
 from typing import Any, AsyncIterator
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
-WORK_DIR = Path(tempfile.gettempdir()) / "tickmark_mock"
+WORK_DIR = Path(tempfile.gettempdir()) / "vera_mock"
 SPEED = float(os.getenv("MOCK_SPEED", "1.0"))
 
 # --------------------------------------------------------------------------
@@ -258,6 +258,12 @@ def _verdict_for(doc_id: str) -> dict:
             "evidence_transaction_ids": [], "evidence": [], "vat": None, "bank": None,
             "low_confidence_fields": [], "invoice": inv, "review_case_id": None,
             "model": "mock", "seconds": 0, "tool_calls": 0, "created_at": _now()}
+
+
+async def replay(doc_id: str, speed: float = 1.0) -> AsyncIterator[Any]:
+    """The mock has no recordings of its own: a replay is the same canned stream."""
+    async for event in verify(doc_id):
+        yield event
 
 
 async def verify(doc_id: str) -> AsyncIterator[Any]:

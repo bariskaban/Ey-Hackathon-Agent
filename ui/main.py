@@ -1,4 +1,4 @@
-"""Tickmark UI entry point.
+"""Vera UI entry point.
 
 Run from the repo root:
     uv run python -m ui.main                       # mock data (default)
@@ -21,7 +21,7 @@ from nicegui import app, ui
 from ui import theme
 
 # Importing the page modules registers their routes (@ui.page).
-from ui.pages import audit, evals, inbox, review, verdict, verify  # noqa: F401
+from ui.pages import audit, demo, evals, inbox, review, verdict, verify  # noqa: F401
 from ui.services import MODE
 
 theme.setup()
@@ -39,16 +39,16 @@ if MODE == "real":
 
 def main() -> None:
     ui.run(
-        title="Tickmark",
+        title="Vera",
         favicon=str(Path(__file__).resolve().parent / "static" / "favicon.svg"),
         port=int(os.getenv("PORT", "8080")),
         reload=os.getenv("UI_RELOAD", "1") == "1",
         show=False,
-        storage_secret=os.getenv("UI_STORAGE_SECRET", "tickmark-local-demo"),
+        storage_secret=os.getenv("UI_STORAGE_SECRET", "vera-local-demo"),
         show_welcome_message=True,
     )
 
 
 if __name__ in {"__main__", "__mp_main__"}:
-    print(f"Tickmark UI using the {MODE} service")
+    print(f"Vera UI using the {MODE} service")
     main()

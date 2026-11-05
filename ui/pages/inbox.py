@@ -18,26 +18,26 @@ STATUS_ICONS = {"VERIFIED": "✓", "VERIFYING": "↻", "QUEUED": "…", "NOT_VER
 _batch: dict[str, Any] = {"running": False, "current": None, "index": 0, "total": 0, "done": 0, "task": None}
 
 GRID_CSS = """
-.tm-ag{--ag-background-color:var(--tm-sheet);--ag-foreground-color:var(--tm-ink);--ag-header-background-color:var(--tm-sheet);
-  --ag-header-foreground-color:var(--tm-graphite);--ag-border-color:var(--tm-rule);--ag-row-border-color:var(--tm-rule);
-  --ag-odd-row-background-color:var(--tm-sheet);--ag-row-hover-color:var(--tm-wash);--ag-font-size:14px;
-  --ag-font-family:'Atkinson Hyperlegible Next',system-ui,sans-serif;--ag-secondary-foreground-color:var(--tm-graphite);
+.vr-ag{--ag-background-color:var(--vr-sheet);--ag-foreground-color:var(--vr-ink);--ag-header-background-color:var(--vr-sheet);
+  --ag-header-foreground-color:var(--vr-graphite);--ag-border-color:var(--vr-rule);--ag-row-border-color:var(--vr-rule);
+  --ag-odd-row-background-color:var(--vr-sheet);--ag-row-hover-color:var(--vr-accent-soft);--ag-font-size:14px;
+  --ag-font-family:var(--vr-font);--ag-secondary-foreground-color:var(--vr-graphite);
   height:min(72vh,760px);width:100%;border:0}
-.tm-ag .ag-header-cell-text{font-weight:500;font-size:13px}
-.tm-ag .ag-cell{display:flex;align-items:center;line-height:1.3}
-.tm-ag .ag-right-aligned-cell{justify-content:flex-end}
-.tm-stack{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:100%}
-.tm-stack>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tm-flags{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.tm-status{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 6px;border:1.5px solid var(--tm-rule-strong);
-  border-radius:14px;font-size:13px;font-weight:700;color:var(--tm-ink);white-space:nowrap}
-.tm-status-verifying{background:var(--tm-wash);border-color:var(--tm-ink)}
-.tm-status-icon{width:16px;text-align:center}
-.tm-uploader{flex:1 1 300px;min-width:240px;max-width:100%;background:var(--tm-sheet);color:var(--tm-ink);
-  border:1px solid var(--tm-border)}
-.tm-uploader .q-uploader__header{background:var(--tm-ink);color:var(--tm-ground)}
-.tm-uploader .q-uploader__header .q-btn{color:var(--tm-highlighter,#E4F07A)}
-.tm-uploader .q-uploader__list{background:var(--tm-sheet);min-height:64px}
+.vr-ag .ag-header-cell-text{font-weight:500;font-size:13px}
+.vr-ag .ag-cell{display:flex;align-items:center;line-height:1.3}
+.vr-ag .ag-right-aligned-cell{justify-content:flex-end}
+.vr-stack{display:flex;flex-direction:column;gap:2px;min-width:0;max-width:100%}
+.vr-stack>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vr-flags{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.vr-status{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 6px;border:1.5px solid var(--vr-rule-strong);
+  border-radius:14px;font-size:13px;font-weight:700;color:var(--vr-ink);white-space:nowrap}
+.vr-status-verifying{background:var(--vr-accent-soft);border-color:var(--vr-ink)}
+.vr-status-icon{width:16px;text-align:center}
+.vr-uploader{flex:1 1 300px;min-width:240px;max-width:100%;background:var(--vr-sheet);color:var(--vr-ink);
+  border:1px solid var(--vr-border)}
+.vr-uploader .q-uploader__header{background:var(--vr-accent);color:var(--vr-on-accent)}
+.vr-uploader .q-uploader__header .q-btn{color:var(--vr-on-accent)}
+.vr-uploader .q-uploader__list{background:var(--vr-sheet);min-height:64px}
 """
 
 
@@ -62,45 +62,45 @@ HTML_COLUMNS = [i for i, c in enumerate(COLUMNS) if c.pop("html", False)]
 def _status_chip(st: str | None) -> str:
     st = st or "NOT_VERIFIED"
     label = DOC_STATUS_LABELS.get(st, st)
-    return (f'<span class="tm-status{" tm-status-verifying" if st == "VERIFYING" else ""}">'
-            f'<span class="tm-status-icon" aria-hidden="true">{STATUS_ICONS.get(st, "")}</span>{esc(label)}</span>')
+    return (f'<span class="vr-status{" vr-status-verifying" if st == "VERIFYING" else ""}">'
+            f'<span class="vr-status-icon" aria-hidden="true">{STATUS_ICONS.get(st, "")}</span>{esc(label)}</span>')
 
 
 def _flags_html(d: Any, st: str | None) -> str:
     if st != "VERIFIED":
-        return '<span class="tm-small">Not checked yet</span>'
+        return '<span class="vr-small">Not checked yet</span>'
     flags = [key(f) for f in (getattr(d, "risk_flags", None) or [])]
     if not flags:
-        return '<span class="tm-small"><span aria-hidden="true">✓</span> No flags</span>'
+        return '<span class="vr-small"><span aria-hidden="true">✓</span> No flags</span>'
     tags = [severity_tag(ERROR_SEVERITY.get(f or "", "high"), error_label(f)) for f in flags[:MAX_FLAGS_SHOWN]]
     if len(flags) > MAX_FLAGS_SHOWN:
-        tags.append(f'<span class="tm-small">+{len(flags) - MAX_FLAGS_SHOWN} more</span>')
-    return '<div class="tm-flags">' + "".join(tags) + "</div>"
+        tags.append(f'<span class="vr-small">+{len(flags) - MAX_FLAGS_SHOWN} more</span>')
+    return '<div class="vr-flags">' + "".join(tags) + "</div>"
 
 
 def _action_html(doc_id: str, st: str | None) -> str:
     d = esc(doc_id)
     if st == "VERIFIED":
-        return f'<a class="tm-btn tm-btn-small" href="/verdict/{d}" aria-label="Open verdict for {d}">Open</a>'
+        return f'<a class="vr-btn vr-btn-small" href="/verdict/{d}" aria-label="Open verdict for {d}">Open</a>'
     if st == "VERIFYING":
-        return f'<a class="tm-btn tm-btn-small" href="/verify/{d}" aria-label="Watch verification of {d}">Watch</a>'
-    return f'<a class="tm-btn tm-btn-small" href="/verify/{d}?start=1" aria-label="Verify {d}">Verify</a>'
+        return f'<a class="vr-btn vr-btn-small" href="/verify/{d}" aria-label="Watch verification of {d}">Watch</a>'
+    return f'<a class="vr-btn vr-btn-small" href="/verify/{d}?start=1" aria-label="Verify {d}">Verify</a>'
 
 
 def _row(d: Any) -> dict[str, Any]:
     """One AG Grid row. Plain fields are text; *_html fields are escaped here."""
     st, v = key(d.status) or "NOT_VERIFIED", key(d.verdict)
     vendor = d.vendor_name or "Unknown until read"
-    country = f'<span class="tm-small">{esc(d.vendor_country)}</span>' if d.vendor_country else ""
+    country = f'<span class="vr-small">{esc(d.vendor_country)}</span>' if d.vendor_country else ""
     try:
         amount_num = float(d.amount_total)
     except (TypeError, ValueError):
         amount_num = -1.0
     return {
         "doc_id": d.doc_id,
-        "doc_html": (f'<div class="tm-stack"><span class="tm-num" style="font-weight:500">{esc(d.doc_id)}</span>'
-                     f'<span class="tm-small" title="{esc(d.filename)}">{esc(d.filename)}</span></div>'),
-        "vendor_html": f'<div class="tm-stack"><span title="{esc(vendor)}">{esc(vendor)}</span>{country}</div>',
+        "doc_html": (f'<div class="vr-stack"><span class="vr-num" style="font-weight:500">{esc(d.doc_id)}</span>'
+                     f'<span class="vr-small" title="{esc(d.filename)}">{esc(d.filename)}</span></div>'),
+        "vendor_html": f'<div class="vr-stack"><span title="{esc(vendor)}">{esc(vendor)}</span>{country}</div>',
         "vendor_sort": vendor.lower(),
         "amount_text": eur(d.amount_total, d.currency),
         "amount_num": amount_num,
@@ -146,7 +146,7 @@ async def inbox_page() -> None:
     status = await svc.system_status()
     ui.add_css(GRID_CSS)
     with shell("inbox", status, await open_case_count()):
-        header = ui.element("div").classes("tm-header")
+        header = ui.element("div").classes("vr-header")
 
         async def on_upload(e) -> None:
             name = Path(e.file.name if hasattr(e, "file") else e.name).name
@@ -180,22 +180,22 @@ async def inbox_page() -> None:
             if not names:
                 ui.notify(f"Some files were not added: use PDF, PNG or JPG files of at most {MAX_MB} MB each.", type="negative")
 
-        with ui.element("section").classes("tm-dropzone").props('aria-label="Upload invoices"'):
+        with ui.element("section").classes("vr-dropzone").props('aria-label="Upload invoices"'):
             html('<div><p style="margin:0;font-size:17px;font-weight:700">Drop invoices here to add them to the inbox</p>'
-                 f'<p class="tm-small" style="margin:4px 0 0;font-size:14px">PDF, PNG or JPG, up to {MAX_MB} MB each. '
+                 f'<p class="vr-small" style="margin:4px 0 0;font-size:14px">PDF, PNG or JPG, up to {MAX_MB} MB each. '
                  'You can drop several files at once. English invoices only; other languages go straight to review.</p></div>'
                  ).style("flex:1 1 320px")
             uploader = ui.upload(on_upload=on_upload, on_multi_upload=lambda _: uploader.reset(), multiple=True,
                                  auto_upload=True, max_file_size=MAX_MB * 1024 * 1024,
-                                 label="Drop files here or select them with the plus button").classes("tm-uploader")
+                                 label="Drop files here or select them with the plus button").classes("vr-uploader")
             uploader.on("rejected", on_rejected)
             verify_all_btn = ui.button("Verify all", on_click=lambda: start_all()).props("no-caps unelevated") \
-                .classes("tm-btn tm-btn-primary")
+                .classes("vr-btn vr-btn-primary")
 
         with ui.row().classes("items-center").style("gap:14px;flex-wrap:wrap") as batch_row:
             batch_label = ui.label().style("font-weight:700")
             batch_bar = ui.linear_progress(value=0, show_value=False, size="10px").props("color=dark").style("flex:1 1 200px")
-            ui.button("Cancel", on_click=lambda: cancel_all()).props("no-caps outline").classes("tm-btn tm-btn-small")
+            ui.button("Cancel", on_click=lambda: cancel_all()).props("no-caps outline").classes("vr-btn vr-btn-small")
         batch_row.set_visibility(False)
 
         @ui.refreshable
@@ -208,15 +208,15 @@ async def inbox_page() -> None:
             not_verified = len([d for d in docs if not d.verdict])
             cells = []
             for k, v in VERDICTS.items():
-                cells.append(f'<div class="tm-card" style="padding:14px 16px;display:flex;flex-direction:column;gap:6px">'
+                cells.append(f'<div class="vr-card" style="padding:14px 16px;display:flex;flex-direction:column;gap:6px">'
                              f'<span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:{v["text"]}">'
                              f'<span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;'
                              f'border-radius:11px;border:2px solid {v["base"]};font-size:12px">{v["icon"]}</span>{v["label"]}</span>'
-                             f'<span style="font-family:Zilla Slab,serif;font-size:30px;font-weight:600">{counts[k]}</span></div>')
-            cells.append('<div class="tm-card" style="padding:14px 16px;display:flex;flex-direction:column;gap:6px">'
+                             f'<span style="font-family:var(--vr-display);font-size:30px;font-weight:600">{counts[k]}</span></div>')
+            cells.append('<div class="vr-card" style="padding:14px 16px;display:flex;flex-direction:column;gap:6px">'
                          '<span style="font-size:14px;font-weight:700">Not verified</span>'
-                         f'<span style="font-family:Zilla Slab,serif;font-size:30px;font-weight:600">{not_verified}</span></div>')
-            html('<section aria-label="Verdict summary" class="tm-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'
+                         f'<span style="font-family:var(--vr-display);font-size:30px;font-weight:600">{not_verified}</span></div>')
+            html('<section aria-label="Verdict summary" class="vr-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'
                  + "".join(cells) + "</section>")
             with header:
                 header.clear()
@@ -225,9 +225,9 @@ async def inbox_page() -> None:
 
         await summary()
 
-        with ui.element("section").classes("tm-card").props('aria-label="Documents"'):
+        with ui.element("section").classes("vr-card").props('aria-label="Documents"'):
             with ui.element("div").style("display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:16px 18px;"
-                                         "border-bottom:1px solid var(--tm-rule)"):
+                                         "border-bottom:1px solid var(--vr-rule)"):
                 search = ui.input("Search", placeholder="Doc id, file name, vendor or invoice number",
                                   on_change=lambda: load_grid()).props("outlined dense clearable debounce=250") \
                     .style("flex:1 1 260px")
@@ -238,7 +238,7 @@ async def inbox_page() -> None:
                 status_sel = ui.select({"ALL": "All statuses", **DOC_STATUS_LABELS}, value="ALL", label="Status",
                                        on_change=lambda: load_grid()).props("outlined dense").style("min-width:160px")
                 ui.button("Clear filters", on_click=lambda: clear_filters()).props("no-caps flat") \
-                    .classes("tm-btn tm-btn-small")
+                    .classes("vr-btn vr-btn-small")
 
             grid = ui.aggrid({
                 "columnDefs": COLUMNS,
@@ -249,12 +249,12 @@ async def inbox_page() -> None:
                 "suppressCellFocus": True,
                 "enableCellTextSelection": True,
                 ":getRowId": "params => params.data.doc_id",
-            }, html_columns=HTML_COLUMNS, auto_size_columns=False).classes("tm-ag")
+            }, html_columns=HTML_COLUMNS, auto_size_columns=False).classes("vr-ag")
 
-            with ui.element("div").classes("tm-empty").style("margin:16px;flex-wrap:wrap") as empty:
+            with ui.element("div").classes("vr-empty").style("margin:16px;flex-wrap:wrap") as empty:
                 ui.label('No documents match these filters. Clear the search or choose "All verdicts" and "All statuses".')
                 ui.button("Clear filters", on_click=lambda: clear_filters()).props("no-caps flat") \
-                    .classes("tm-btn tm-btn-small")
+                    .classes("vr-btn vr-btn-small")
 
         async def load_grid() -> None:
             docs = await svc.list_documents()
