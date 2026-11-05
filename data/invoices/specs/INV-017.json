@@ -1,0 +1,61 @@
+{
+  "invoice_number": "RE/0050",
+  "invoice_date": "2026-10-26",
+  "supply_date": "2026-10-21",
+  "due_date": "2026-11-25",
+  "po_number": "PO-2026-1407",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Stichting Adriaense",
+    "address": "Floorlaan 78, 2801 SJ Westkapelle",
+    "country": "NL",
+    "vat_number": "NL364371717B01",
+    "kvk_number": "87701200",
+    "iban": "NL59SNSB8760623742"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "FUR-003",
+      "description": "Cable tray",
+      "quantity": "8",
+      "unit_price": "33.08",
+      "vat_rate": "21",
+      "line_total": "264.64"
+    },
+    {
+      "sku": "FUR-001",
+      "description": "Ergonomic office chair",
+      "quantity": "4",
+      "unit_price": "294.57",
+      "vat_rate": "21",
+      "line_total": "1178.28"
+    },
+    {
+      "sku": "FUR-004",
+      "description": "Monitor arm",
+      "quantity": "2",
+      "unit_price": "60.33",
+      "vat_rate": "21",
+      "line_total": "120.66"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "1563.58",
+      "vat": "328.35"
+    }
+  ],
+  "total_excl_vat": "1563.58",
+  "total_vat": "328.35",
+  "total_incl_vat": "1897.33",
+  "reverse_charge": false,
+  "notes": null
+}

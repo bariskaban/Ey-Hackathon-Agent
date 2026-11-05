@@ -1,0 +1,61 @@
+{
+  "invoice_number": "F-2026-109",
+  "invoice_date": "2026-10-27",
+  "supply_date": "2026-10-21",
+  "due_date": "2026-11-26",
+  "po_number": "PO-2026-1391",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Blokland Groep",
+    "address": "Kiandreef 181, 4001 OG Arnemuiden",
+    "country": "NL",
+    "vat_number": "NL126855092B01",
+    "kvk_number": "46913810",
+    "iban": "NL93RABO0958682846"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "OFF-004",
+      "description": "Desk organiser",
+      "quantity": "25",
+      "unit_price": "20.68",
+      "vat_rate": "21",
+      "line_total": "517.00"
+    },
+    {
+      "sku": "OFF-001",
+      "description": "A4 copy paper 80g (box of 5 reams)",
+      "quantity": "77",
+      "unit_price": "30.03",
+      "vat_rate": "21",
+      "line_total": "2312.31"
+    },
+    {
+      "sku": "OFF-002",
+      "description": "Ballpoint pens (pack of 50)",
+      "quantity": "76",
+      "unit_price": "19.41",
+      "vat_rate": "21",
+      "line_total": "1475.16"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "4304.47",
+      "vat": "903.94"
+    }
+  ],
+  "total_excl_vat": "4304.47",
+  "total_vat": "903.94",
+  "total_incl_vat": "5208.41",
+  "reverse_charge": false,
+  "notes": null
+}

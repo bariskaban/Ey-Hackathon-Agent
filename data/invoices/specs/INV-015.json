@@ -1,0 +1,53 @@
+{
+  "invoice_number": "F-2026-114",
+  "invoice_date": "2026-11-01",
+  "supply_date": "2026-10-29",
+  "due_date": "2026-12-01",
+  "po_number": "PO-2026-1405",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Heijmen Groep",
+    "address": "Finnlaan 2, 3048 GG Luxwoude",
+    "country": "NL",
+    "vat_number": "NL528853029B01",
+    "kvk_number": "58586340",
+    "iban": "NL33RABO9184064900"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "PRT-004",
+      "description": "Printed course reader (book)",
+      "quantity": "40",
+      "unit_price": "7.40",
+      "vat_rate": "9",
+      "line_total": "296.00"
+    },
+    {
+      "sku": "PRT-003",
+      "description": "Professional handbook",
+      "quantity": "4",
+      "unit_price": "34.74",
+      "vat_rate": "9",
+      "line_total": "138.96"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "9",
+      "base": "434.96",
+      "vat": "39.15"
+    }
+  ],
+  "total_excl_vat": "434.96",
+  "total_vat": "39.15",
+  "total_incl_vat": "474.11",
+  "reverse_charge": false,
+  "notes": null
+}

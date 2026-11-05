@@ -1,0 +1,61 @@
+{
+  "invoice_number": "FA-00087",
+  "invoice_date": "2026-10-23",
+  "supply_date": "2026-10-19",
+  "due_date": "2026-11-22",
+  "po_number": "PO-2026-1398",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Koninklijke Mathieu",
+    "address": "Maartenring 47, 2107 EI Hezingen",
+    "country": "NL",
+    "vat_number": "NL329509408B01",
+    "kvk_number": "63826716",
+    "iban": "NL12INGB5002078344"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "PKG-004",
+      "description": "Packing tape (pack of 36)",
+      "quantity": "10",
+      "unit_price": "30.87",
+      "vat_rate": "21",
+      "line_total": "308.70"
+    },
+    {
+      "sku": "PKG-002",
+      "description": "Bubble wrap roll 50 m",
+      "quantity": "52",
+      "unit_price": "28.80",
+      "vat_rate": "21",
+      "line_total": "1497.60"
+    },
+    {
+      "sku": "PKG-001",
+      "description": "Cardboard boxes 40x30 cm (pack of 100)",
+      "quantity": "4",
+      "unit_price": "86.31",
+      "vat_rate": "21",
+      "line_total": "345.24"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "2151.54",
+      "vat": "451.82"
+    }
+  ],
+  "total_excl_vat": "2151.54",
+  "total_vat": "451.82",
+  "total_incl_vat": "2603.36",
+  "reverse_charge": false,
+  "notes": null
+}

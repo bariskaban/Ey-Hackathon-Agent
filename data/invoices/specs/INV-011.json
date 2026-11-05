@@ -1,0 +1,61 @@
+{
+  "invoice_number": "FA-00038",
+  "invoice_date": "2026-10-17",
+  "supply_date": "2026-10-14",
+  "due_date": "2026-11-16",
+  "po_number": "PO-2026-1401",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Northern Star Maritime Holding B.V.",
+    "address": "Kaybaan 80, 8009 GH Garrelsweer",
+    "country": "NL",
+    "vat_number": "NL532311310B01",
+    "kvk_number": "55540424",
+    "iban": "NL61BUNQ3700855390"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "LOG-001",
+      "description": "Pallet transport (per pallet)",
+      "quantity": "3",
+      "unit_price": "187.86",
+      "vat_rate": "21",
+      "line_total": "563.58"
+    },
+    {
+      "sku": "LOG-003",
+      "description": "Warehouse storage (per pallet per month)",
+      "quantity": "32",
+      "unit_price": "24.67",
+      "vat_rate": "21",
+      "line_total": "789.44"
+    },
+    {
+      "sku": "LOG-002",
+      "description": "Courier parcel (per parcel)",
+      "quantity": "28",
+      "unit_price": "13.05",
+      "vat_rate": "21",
+      "line_total": "365.40"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "1718.42",
+      "vat": "360.87"
+    }
+  ],
+  "total_excl_vat": "1718.42",
+  "total_vat": "360.87",
+  "total_incl_vat": "2079.29",
+  "reverse_charge": false,
+  "notes": null
+}

@@ -1,0 +1,61 @@
+{
+  "invoice_number": "2026-0417",
+  "invoice_date": "2026-10-30",
+  "supply_date": "2026-10-24",
+  "due_date": "2026-11-29",
+  "po_number": "PO-2026-1395",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Rijnmond Kantoorwaren B.V.",
+    "address": "Merelsteeg 2, 5743 XX Vredepeel",
+    "country": "NL",
+    "vat_number": "NL758093743B01",
+    "kvk_number": "82497194",
+    "iban": "NL53TRIO7062761823"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "OFF-003",
+      "description": "Ring binders A4",
+      "quantity": "27",
+      "unit_price": "3.36",
+      "vat_rate": "21",
+      "line_total": "90.72"
+    },
+    {
+      "sku": "OFF-002",
+      "description": "Ballpoint pens (pack of 50)",
+      "quantity": "11",
+      "unit_price": "18.71",
+      "vat_rate": "21",
+      "line_total": "205.81"
+    },
+    {
+      "sku": "OFF-005",
+      "description": "Toner cartridge, black",
+      "quantity": "13",
+      "unit_price": "89.80",
+      "vat_rate": "21",
+      "line_total": "1167.40"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "1463.93",
+      "vat": "307.43"
+    }
+  ],
+  "total_excl_vat": "1463.93",
+  "total_vat": "307.43",
+  "total_incl_vat": "1771.36",
+  "reverse_charge": false,
+  "notes": null
+}
