@@ -1,4 +1,4 @@
-"""The recorded event streams in fixtures/events/ must always match the event contract.
+"""The recorded event streams in fixtures/recorded_events/ must always match the event contract.
 
 The UI builds its mock service and its replay mode from these files. If someone changes
 agent/schemas.py in a way that breaks them, this test fails and says which stream.
@@ -12,7 +12,7 @@ from pydantic import TypeAdapter
 
 from agent.schemas import Event, VerdictStatus
 
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "events"
+FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "recorded_events"
 INDEX = json.loads((FIXTURES / "index.json").read_text(encoding="utf-8"))
 ADAPTER = TypeAdapter(Event)
 

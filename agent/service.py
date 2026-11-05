@@ -2,7 +2,6 @@
 
 Everything here is async except `get_document_file`. `verify()` streams the events defined in
 agent/schemas.py and records them to data/runs/<doc_id>.jsonl, which powers the UI's replay mode.
-Functions for later phases (review cases, evaluation) raise NotImplementedError for now.
 """
 
 import asyncio
@@ -213,6 +212,16 @@ async def set_case_status(case_id: str, status: str, reviewer: str, reason: str)
     """Humans only. This is never exposed to an agent: it is not an MCP tool and no role can reach it."""
     with writable() as con:
         return ReviewCase(**store.set_status(con, case_id, status, reviewer, reason))
+
+
+async def add_case_note(case_id: str, text: str, author: str) -> ReviewCase:
+    """A person's note on a case. Notes are append-only; like set_case_status, this is never an MCP tool."""
+    if not text.strip() or not author.strip():
+        raise ValueError("a note needs text and an author")
+    with writable() as con:
+        store.get_case(con, case_id)  # raises for an unknown case
+        store.add_note(con, case_id, author.strip(), text.strip())
+        return ReviewCase(**store.get_case(con, case_id))
 
 
 async def export_evidence_pack(case_id: str, fmt: str = "pdf") -> Path:

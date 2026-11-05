@@ -1,0 +1,239 @@
+[
+  {
+    "case_id": "C-0002",
+    "doc_id": "INV-002",
+    "vendor_name": "Van der Berg Logistiek B.V.",
+    "error_type": "WRONG_AMOUNT",
+    "severity": "medium",
+    "verdict": "MISMATCH",
+    "status": "OPEN",
+    "created_at": "2026-11-05T10:06:00+00:00",
+    "summary": "The total is higher than the purchase order allows. Ask Van der Berg Logistiek to explain the difference or send a corrected invoice before paying.",
+    "amount": "8470.00",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:06:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict MISMATCH."
+      }
+    ],
+    "decision": null
+  },
+  {
+    "case_id": "C-0003",
+    "doc_id": "INV-003",
+    "vendor_name": "Kantoorpunt Utrecht B.V.",
+    "error_type": "DUPLICATE_INVOICE",
+    "severity": "high",
+    "verdict": "MISMATCH",
+    "status": "OPEN",
+    "created_at": "2026-11-05T10:09:00+00:00",
+    "summary": "This invoice was already booked under the same number written differently. Paying it would pay the vendor twice.",
+    "amount": "594.96",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:09:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict MISMATCH."
+      }
+    ],
+    "decision": null
+  },
+  {
+    "case_id": "C-0004",
+    "doc_id": "INV-004",
+    "vendor_name": "Hoekstra Installatietechniek B.V.",
+    "error_type": "QUANTITY_NOT_RECEIVED",
+    "severity": "medium",
+    "verdict": "MISMATCH",
+    "status": "REJECTED",
+    "created_at": "2026-11-05T10:12:00+00:00",
+    "summary": "The invoice bills for more service visits than the goods receipt records. Pay only for what was received, or ask the site manager to confirm the extra visits.",
+    "amount": "3993.00",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:12:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict MISMATCH."
+      },
+      {
+        "ts": "2026-11-05T10:52:00+00:00",
+        "author": "B. Kaban",
+        "text": "Site manager confirmed only 4 visits."
+      }
+    ],
+    "decision": {
+      "status": "REJECTED",
+      "reviewer": "B. Kaban",
+      "reason": "Site manager confirmed only 4 visits.",
+      "ts": "2026-11-05T10:52:00+00:00"
+    }
+  },
+  {
+    "case_id": "C-0006",
+    "doc_id": "INV-006",
+    "vendor_name": "Lindqvist Trading B.V.",
+    "error_type": "UNKNOWN_VENDOR",
+    "severity": "high",
+    "verdict": "NOT_FOUND",
+    "status": "ESCALATED",
+    "created_at": "2026-11-05T10:18:00+00:00",
+    "summary": "There is no vendor with this name or VAT number in the records, so nothing could be matched. Check whether this is a new supplier that still needs to be set up.",
+    "amount": "4779.98",
+    "currency": "EUR",
+    "checks_passed": 6,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:18:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict NOT_FOUND."
+      },
+      {
+        "ts": "2026-11-05T10:58:00+00:00",
+        "author": "B. Kaban",
+        "text": "New supplier? Needs sign-off from procurement."
+      }
+    ],
+    "decision": {
+      "status": "ESCALATED",
+      "reviewer": "B. Kaban",
+      "reason": "New supplier? Needs sign-off from procurement.",
+      "ts": "2026-11-05T10:58:00+00:00"
+    }
+  },
+  {
+    "case_id": "C-0007",
+    "doc_id": "INV-007",
+    "vendor_name": "Meijer Food Supplies B.V.",
+    "error_type": "WRONG_VAT_RATE",
+    "severity": "medium",
+    "verdict": "MISMATCH",
+    "status": "OPEN",
+    "created_at": "2026-11-05T10:21:00+00:00",
+    "summary": "Food is taxed at 9%, but this invoice charges 21%. Ask Meijer Food Supplies for a corrected invoice before paying.",
+    "amount": "1452.00",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:21:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict MISMATCH."
+      }
+    ],
+    "decision": null
+  },
+  {
+    "case_id": "C-0010",
+    "doc_id": "INV-010",
+    "vendor_name": "De Wit Advies",
+    "error_type": "INVALID_VAT_NUMBER",
+    "severity": "medium",
+    "verdict": "MISMATCH",
+    "status": "OPEN",
+    "created_at": "2026-11-05T10:30:00+00:00",
+    "summary": "The supplier's VAT number is not valid. The invoice cannot be used to reclaim VAT until it is corrected.",
+    "amount": "1815.00",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:30:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict MISMATCH."
+      }
+    ],
+    "decision": null
+  },
+  {
+    "case_id": "C-0011",
+    "doc_id": "INV-011",
+    "vendor_name": "Kantoorpunt Utrecht B.V.",
+    "error_type": "VAT_ARITHMETIC_ERROR",
+    "severity": "low",
+    "verdict": "PARTIAL_MATCH",
+    "status": "APPROVED",
+    "created_at": "2026-11-05T10:33:00+00:00",
+    "summary": "The VAT total is off by a small amount. Everything else matches, so this is low risk, but ask for a corrected invoice so the VAT return is right.",
+    "amount": "597.06",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:33:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict PARTIAL_MATCH."
+      },
+      {
+        "ts": "2026-11-05T11:13:00+00:00",
+        "author": "B. Kaban",
+        "text": "Rounding difference of €2.10, accepted."
+      }
+    ],
+    "decision": {
+      "status": "APPROVED",
+      "reviewer": "B. Kaban",
+      "reason": "Rounding difference of €2.10, accepted.",
+      "ts": "2026-11-05T11:13:00+00:00"
+    }
+  },
+  {
+    "case_id": "C-0012",
+    "doc_id": "INV-012",
+    "vendor_name": "Van Dijk Catering B.V.",
+    "error_type": "CHANGED_BANK_DETAILS",
+    "severity": "high",
+    "verdict": "MISMATCH",
+    "status": "OPEN",
+    "created_at": "2026-11-05T10:36:00+00:00",
+    "summary": "The bank account on this invoice is not the one in the vendor record. A new bank account on an invoice is a common sign of invoice fraud, so confirm with Van Dijk Catering by phone, using a number from the vendor record, before paying.",
+    "amount": "2904.00",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:36:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict MISMATCH."
+      }
+    ],
+    "decision": null
+  },
+  {
+    "case_id": "C-0013",
+    "doc_id": "INV-013",
+    "vendor_name": "Noordzee Services B.V.",
+    "error_type": "PROMPT_INJECTION",
+    "severity": "high",
+    "verdict": "NEEDS_REVIEW",
+    "status": "OPEN",
+    "created_at": "2026-11-05T10:39:00+00:00",
+    "summary": "The invoice contains hidden instructions aimed at the AI. They were ignored, but the extracted data cannot be trusted, so a person needs to review the invoice.",
+    "amount": "1140.00",
+    "currency": "EUR",
+    "checks_passed": 17,
+    "checks_total": 18,
+    "notes": [
+      {
+        "ts": "2026-11-05T10:39:00+00:00",
+        "author": "Reporter agent",
+        "text": "Opened case from verdict NEEDS_REVIEW."
+      }
+    ],
+    "decision": null
+  }
+]

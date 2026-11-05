@@ -1,0 +1,217 @@
+{
+  "doc_id": "INV-006",
+  "invoice_id": "INV-006",
+  "verdict": "NOT_FOUND",
+  "reason": null,
+  "confidence": 0.38,
+  "auditor_note": "There is no vendor with this name or VAT number in the records, so nothing could be matched. Check whether this is a new supplier that still needs to be set up.",
+  "reasoning": "Fixed checks found the issue; the agent confirmed it with the evidence listed.",
+  "discrepancies": [
+    {
+      "type": "UNKNOWN_VENDOR",
+      "field": "Vendor",
+      "expected": "a known vendor",
+      "found": "Lindqvist Trading B.V.",
+      "severity": "high",
+      "check": "vendor_known"
+    }
+  ],
+  "risk_flags": [
+    "UNKNOWN_VENDOR"
+  ],
+  "checks": [
+    {
+      "name": "prompt_injection",
+      "server": "host",
+      "status": "pass",
+      "detail": "No text addressed to an AI found in the invoice.",
+      "severity": null
+    },
+    {
+      "name": "vendor_known",
+      "server": "transactions",
+      "status": "fail",
+      "detail": "No vendor with this name or VAT number in the vendor master.",
+      "severity": "high"
+    },
+    {
+      "name": "not_duplicate",
+      "server": "transactions",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "not_already_paid",
+      "server": "transactions",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "po_match",
+      "server": "transactions",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "goods_received",
+      "server": "transactions",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "vat_number_valid",
+      "server": "tax_rules",
+      "status": "pass",
+      "detail": "Supplier VAT number passes the format and checksum check.",
+      "severity": null
+    },
+    {
+      "name": "vat_treatment",
+      "server": "tax_rules",
+      "status": "pass",
+      "detail": "VAT treatment matches the supplier and buyer countries.",
+      "severity": null
+    },
+    {
+      "name": "vat_rate",
+      "server": "tax_rules",
+      "status": "pass",
+      "detail": "Each line uses the right VAT rate for what was sold.",
+      "severity": null
+    },
+    {
+      "name": "mandatory_fields",
+      "server": "tax_rules",
+      "status": "pass",
+      "detail": "All fields Dutch invoices must show are present.",
+      "severity": null
+    },
+    {
+      "name": "vat_math",
+      "server": "tax_rules",
+      "status": "pass",
+      "detail": "Line totals, VAT per rate and the total add up.",
+      "severity": null
+    },
+    {
+      "name": "iban_valid",
+      "server": "vendor_checks",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "bank_details_match",
+      "server": "vendor_checks",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "sanctions",
+      "server": "vendor_checks",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "employee_overlap",
+      "server": "vendor_checks",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "amount_typical",
+      "server": "anomaly_stats",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "no_split",
+      "server": "anomaly_stats",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    },
+    {
+      "name": "date_ok",
+      "server": "anomaly_stats",
+      "status": "skipped",
+      "detail": "Skipped: no vendor to compare against.",
+      "severity": null
+    }
+  ],
+  "evidence_transaction_ids": [],
+  "evidence": [],
+  "vat": {
+    "lines": [
+      {
+        "rate_label": "21%",
+        "net": "3950.40",
+        "vat_expected": "829.58",
+        "vat_found": "829.58",
+        "ok": true
+      }
+    ],
+    "reverse_charge_applies": false,
+    "shown_correctly": true,
+    "vat_number_valid": true,
+    "missing_fields": []
+  },
+  "bank": {
+    "iban_matches": true,
+    "invoice_iban_last4": "5521",
+    "vendor_iban_last4": null,
+    "last_changed": "2024-10-02",
+    "sanctions_hit": false,
+    "employee_overlap": false
+  },
+  "low_confidence_fields": [],
+  "invoice": {
+    "supplier_name": "Lindqvist Trading B.V.",
+    "supplier_country": "NL",
+    "supplier_vat_number": "NL869902211B01",
+    "supplier_kvk_number": "90144327",
+    "supplier_address": "Stationsplein 1, 1012 AB Amsterdam",
+    "buyer_name": "Polder Werktuigen B.V.",
+    "buyer_vat_number": "NL859012345B01",
+    "buyer_address": "Industrieweg 8, 3542 AD Utrecht",
+    "invoice_number": "0093",
+    "invoice_date": "2026-10-18",
+    "supply_date": "2026-10-18",
+    "po_number": null,
+    "currency": "EUR",
+    "lines": [
+      {
+        "description": "Office furniture",
+        "qty": 4,
+        "unit_price": "987.60",
+        "vat_rate": 21,
+        "amount": "3950.40"
+      }
+    ],
+    "vat_lines": [
+      {
+        "rate": 21,
+        "net": "3950.40",
+        "vat": "829.58"
+      }
+    ],
+    "total_excl_vat": "3950.40",
+    "total_vat": "829.58",
+    "total_incl_vat": "4779.98",
+    "iban_last4": "5521",
+    "reverse_charge_text": null
+  },
+  "review_case_id": "C-0006",
+  "model": "qwen3:8b",
+  "seconds": 64,
+  "tool_calls": 13,
+  "created_at": "2026-11-05T10:18:00+00:00"
+}

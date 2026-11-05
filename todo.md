@@ -30,7 +30,7 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 
 ## 1. The contract between backend and UI [BOTH]
 
-The UI **only** imports `agent/service.py`. Until the backend is ready, the UI uses `ui/mock_service.py` with exactly the same functions. Switch with an env var: `INVOICE_SERVICE=mock|real`.
+The UI **only** imports `agent/service.py`. Until the backend is ready, the UI uses `ui/mock_service.py` with exactly the same functions. Switch with an env var: `INVOICE_SERVICE=mock|real`. (Integration, done: `real` loads `ui/real_service.py`, which calls `agent/service.py` and converts its models to the flat shape the pages read: nested invoice to flat, backend check names to the UI's (16 checks, not 18), review case with a decision, audit entries, eval rows. The backend contract did not change, except that `agent/service.py` gained `add_case_note()`. The audit view lists only the calls of each document's recorded run, so evaluation runs do not inflate it. Tested in `tests/test_ui_real_service.py`.)
 
 ### Service functions (`agent/service.py`)
 
@@ -114,8 +114,8 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 - [x] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus` (Invoice, Verdict, the 8 event types, AuditEntry, ReviewCase, EvalProgress, EvalReport, SystemStatus and DocumentInfo are written; the UI side still needs to review the field names.)
 - [x] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError` (done as the real service: verify, documents, verdict, audit log and status work; case and eval functions raise `NotImplementedError` until Phases 5 and 6.)
-- [x] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later (Done as real recordings, not hand-written: `fixtures/events/` has 5 streams from the real model, an index, and a test that keeps them valid. The duplicate-with-changed-IBAN scenario is covered by two separate streams, `duplicate` and `changed_bank`; a single combined invoice is not in the 20.)
-- [ ] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
+- [x] [TECH] Hand-write 4 sample event streams in `fixtures/recorded_events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later (Done as real recordings, not hand-written: `fixtures/recorded_events/` has 5 streams from the real model, an index, and a test that keeps them valid. The duplicate-with-changed-IBAN scenario is covered by two separate streams, `duplicate` and `changed_bank`; a single combined invoice is not in the 20.)
+- [x] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
 
 ---
 
@@ -186,64 +186,64 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 ### U0: Design first
 - [ ] Wireframes for every page (Excalidraw, Figma or paper) before writing code. Pages: Inbox, Live verification, Verdict, Review queue, Audit log, Eval results, Demo
-- [ ] Design tokens in `ui/theme.py`: colours (verdict and severity colours agreed in kickoff), fonts, spacing, light and dark mode
-- [ ] App shell: left nav, header with a **"Runs 100% locally"** badge and a system status chip (Ollama up, model name, servers up, from `system_status()`)
-- [ ] Product name, logo and favicon
-- [ ] Status is never shown by colour alone: always add an icon or label (accessibility, and readable on a projector)
-- [ ] Euro formatting throughout, English style (`€1,234.56`)
+- [x] Design tokens in `ui/theme.py`: colours (verdict and severity colours agreed in kickoff), fonts, spacing, light and dark mode
+- [ ] App shell: left nav, header with a **"Runs 100% locally"** badge and a system status chip (Ollama up, model name, servers up, from `system_status()`) (Partly done: the left nav and dark-mode switch exist; the header with the local badge and status chip does not. `shell()` receives `system_status()` but does not show it.)
+- [x] Product name, logo and favicon
+- [x] Status is never shown by colour alone: always add an icon or label (accessibility, and readable on a projector)
+- [x] Euro formatting throughout, English style (`€1,234.56`)
 
 ### U1: Mock-first setup
-- [ ] `ui/main.py` running `ui.run()` with page routing
-- [ ] `ui/mock_service.py` and fixtures (see section 1), with an `INVOICE_SERVICE` env-var switch
-- [ ] **Milestone M1:** every page clickable on mock data
+- [x] `ui/main.py` running `ui.run()` with page routing
+- [x] `ui/mock_service.py` and fixtures (see section 1), with an `INVOICE_SERVICE` env-var switch
+- [ ] **Milestone M1:** every page clickable on mock data (All six pages work on mock data; the Demo page is still missing.)
 
 ### U2: Inbox
-- [ ] Drag-and-drop upload (`ui.upload`), multiple files at once, file type and size checks with friendly errors
-- [ ] Document table (AG Grid): file name, vendor, amount, date, status chip, verdict badge, risk flags
-- [ ] Filters (verdict, status) and search
-- [ ] "Verify" on a row, and "Verify all" (only 20 invoices, so a full run is realistic)
+- [x] Drag-and-drop upload (`ui.upload`), multiple files at once, file type and size checks with friendly errors
+- [x] Document table (AG Grid): file name, vendor, amount, date, status chip, verdict badge, risk flags
+- [x] Filters (verdict, status) and search
+- [x] "Verify" on a row, and "Verify all" (only 20 invoices, so a full run is realistic)
 
 ### U3: Live verification view (the main demo screen)
-- [ ] Stage stepper: Read document → Extract → Checks → Agent → Verdict → Report
-- [ ] Live checklist that fills in from `check_result` events, grouped by server (transactions, Dutch VAT, vendor checks, anomalies), each check showing pass/fail/skipped and its detail
-- [ ] Live audit feed from `tool_call` events: role colour, server, tool, rows returned, latency; refused calls highlighted
-- [ ] Agent reasoning panel (`llm_note` events)
-- [ ] Elapsed timer, cancel button, error state with a retry button
+- [x] Stage stepper: Read document → Extract → Checks → Agent → Verdict → Report
+- [x] Live checklist that fills in from `check_result` events, grouped by server (transactions, Dutch VAT, vendor checks, anomalies), each check showing pass/fail/skipped and its detail
+- [x] Live audit feed from `tool_call` events: role colour, server, tool, rows returned, latency; refused calls highlighted
+- [x] Agent reasoning panel (`llm_note` events)
+- [x] Elapsed timer, cancel button, error state with a retry button
 
 ### U4: Verdict page
-- [ ] Split view: invoice preview on the left (PDF pages rendered to images), extracted fields on the right; low-confidence fields marked
-- [ ] Big verdict badge, confidence meter, risk flags
-- [ ] Discrepancy table: field / expected / found / severity
-- [ ] **VAT panel:** VAT per rate (expected vs found), reverse charge yes/no and whether the invoice shows it correctly, VAT number validity, missing mandatory fields
-- [ ] Bank panel: IBAN matches the vendor master or not (last 4 digits only), sanctions screening result
-- [ ] Evidence transactions table (masked values, exactly as the agent saw them)
-- [ ] "Open review case" button
-- [ ] Stretch: highlight the mismatched fields directly on the invoice image
+- [x] Split view: invoice preview on the left (PDF pages rendered to images), extracted fields on the right; low-confidence fields marked
+- [x] Big verdict badge, confidence meter, risk flags
+- [x] Discrepancy table: field / expected / found / severity
+- [x] **VAT panel:** VAT per rate (expected vs found), reverse charge yes/no and whether the invoice shows it correctly, VAT number validity, missing mandatory fields
+- [x] Bank panel: IBAN matches the vendor master or not (last 4 digits only), sanctions screening result
+- [x] Evidence transactions table (masked values, exactly as the agent saw them)
+- [x] "Open review case" button
+- [ ] Stretch: highlight the mismatched fields directly on the invoice image (Only on the drawn fallback sheet, not on the real PDF image.)
 
 ### U5: Review queue
-- [ ] Case list sorted by severity, with filters by status and error type
-- [ ] Case detail: verdict summary, evidence, notes timeline
-- [ ] Approve / Reject / Escalate, **reason required**, which calls `set_case_status()`; this is the only place a final status is set
-- [ ] Add a note
-- [ ] "Export evidence pack" (PDF / XLSX) → download
+- [x] Case list sorted by severity, with filters by status and error type
+- [x] Case detail: verdict summary, evidence, notes timeline
+- [x] Approve / Reject / Escalate, **reason required**, which calls `set_case_status()`; this is the only place a final status is set
+- [x] Add a note
+- [x] "Export evidence pack" (PDF / XLSX) → download
 
 ### U6: Audit log explorer ("what the AI saw")
-- [ ] Filterable table: invoice, role, server, tool, refused yes/no
-- [ ] Timeline for each invoice: every tool call in order, with the masked results
-- [ ] Summary per role: tools allowed vs tools used, budget used
-- [ ] This page backs the "the AI never sees the full database" pitch, so make it clear
+- [x] Filterable table: invoice, role, server, tool, refused yes/no
+- [x] Timeline for each invoice: every tool call in order, with the masked results
+- [x] Summary per role: tools allowed vs tools used, budget used
+- [x] This page backs the "the AI never sees the full database" pitch, so make it clear
 
 ### U7: Eval results
-- [ ] Model selector + "Run eval" button + progress bar (`run_eval()` stream)
-- [ ] Headline numbers: correct out of 20, errors caught out of 14, consistent across 3 runs, average seconds per invoice
-- [ ] **Results grid:** 20 rows (invoices) × 3 runs, each cell a pass/fail icon, with the planted error type and the check that caught it
-- [ ] Model comparison table across eval runs
-- [ ] Click a row → verdict page for that invoice
+- [x] Model selector + "Run eval" button + progress bar (`run_eval()` stream)
+- [x] Headline numbers: correct out of 20, errors caught out of 14, consistent across 3 runs, average seconds per invoice
+- [x] **Results grid:** 20 rows (invoices) × 3 runs, each cell a pass/fail icon, with the planted error type and the check that caught it
+- [x] Model comparison table across eval runs
+- [x] Click a row → verdict page for that invoice
 
 ### U8: Demo mode and polish
 - [ ] Demo page: one button per demo-script step (idea.md §10), each loading the right invoice and starting verification
 - [ ] **Replay mode:** play back a recorded `data/runs/*.jsonl` event stream at real speed, so the demo still works if the live model is slow or fails
-- [ ] Empty, loading and error states on every page
+- [ ] Empty, loading and error states on every page (Empty and error states exist on most pages; there are no loading states yet.)
 - [ ] Check the layout at 1366×768 and 1920×1080 (projector sizes)
 - [ ] Keyboard shortcuts for the demo (next scenario, toggle replay)
 - [ ] Use the same wording for verdicts, error types and severities everywhere
