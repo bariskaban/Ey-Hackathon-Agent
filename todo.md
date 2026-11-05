@@ -18,13 +18,13 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 
 ## 0. Kickoff [BOTH]
 
-- [ ] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, runs, `.venv`), and `README.md` with run instructions
-- [ ] Python 3.11+, use `uv` for the environment, one shared `pyproject.toml`
+- [x] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, runs, `.venv`), and `README.md` with run instructions
+- [x] Python 3.11+, use `uv` for the environment, one shared `pyproject.toml`
 - [ ] Install Ollama and pull the models: `qwen3:8b` (later `gpt-oss:20b` and the Qwen3 30B-A3B model for comparison; check the exact tags in the Ollama library)
 - [ ] Install Tesseract (English language pack only), and Node (only needed for `npx @modelcontextprotocol/inspector`)
-- [ ] **Agree the contract (section 1) together**, about an hour. TECH writes `schemas.py`; UI reviews field names and what each screen needs.
-- [ ] Agree the verdict names, the 14 error-type names and the severity colours (they show up everywhere in the UI)
-- [ ] Git workflow: short feature branches → PR → merge to `main`, and keep `main` runnable
+- [x] **Agree the contract (section 1) together**, about an hour. TECH writes `schemas.py`; UI reviews field names and what each screen needs. (Conventions agreed, see "Agreed decisions" in section 1; the full `schemas.py` models are still open in section 1.)
+- [x] Agree the verdict names, the 14 error-type names and the severity colours (they show up everywhere in the UI). (Agreed, see "Agreed decisions" in section 1; enums live in `agent/schemas.py`; the verdict enum is `VerdictStatus` so `Verdict` stays free for the full result model.)
+- [x] Git workflow: short feature branches → PR → merge to `main`, and keep `main` runnable
 
 ---
 
@@ -65,6 +65,52 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 | `llm_note` | `role`, `text` (short summary of the reasoning) | Agent reasoning panel |
 | `verdict` | `verdict` (the full `Verdict`) | Verdict page |
 | `error` | `message`, `stage` | Error state |
+
+### Agreed decisions
+
+**Conventions**
+- `agent/schemas.py` is the single source of truth; fixtures and `mock_service.py` are written from it.
+- Every enum is a `str` Enum, serialised as its name.
+- Money is `Decimal` plus a currency code, serialised as a string, never a float.
+- Timestamps are ISO-8601 UTC. `confidence` is 0.0 to 1.0.
+- Every event has a `type` discriminator, plus `doc_id`, `seq` and `ts`.
+- `doc_id` is a short readable ID (`INV-001`); the SHA-256 stays internal to the documents server.
+- A discrepancy's `type` is the `ErrorType` enum (not a free string). `checks[]` in `Verdict` carry `severity`. `NEEDS_REVIEW` carries a `reason`.
+
+**Verdicts**
+
+| Verdict | Meaning | Colour |
+|---|---|---|
+| `MATCHED` | All checks pass | green `#16A34A` ✔ |
+| `PARTIAL_MATCH` | Matches, with only low-severity discrepancies | amber `#D97706` ◐ |
+| `MISMATCH` | At least one medium or high discrepancy | red `#DC2626` ✖ |
+| `NOT_FOUND` | No vendor, PO or transaction to compare against | grey `#6B7280` ? |
+| `NEEDS_REVIEW` | The system can't decide, so a human must | blue `#2563EB` 👁 |
+
+**Error types (14) and default severity**
+
+| # | `ErrorType` | Severity |
+|---|---|---|
+| 1 | `WRONG_AMOUNT` | medium |
+| 2 | `QUANTITY_NOT_RECEIVED` | medium |
+| 3 | `DUPLICATE_INVOICE` | high |
+| 4 | `ALREADY_PAID` | high |
+| 5 | `UNKNOWN_VENDOR` | high |
+| 6 | `VAT_ARITHMETIC_ERROR` | low |
+| 7 | `WRONG_VAT_RATE` | medium |
+| 8 | `REVERSE_CHARGE_ERROR` | medium |
+| 9 | `INVALID_VAT_NUMBER` | medium |
+| 10 | `MISSING_MANDATORY_FIELDS` | medium |
+| 11 | `CHANGED_BANK_DETAILS` | high |
+| 12 | `SANCTIONED_VENDOR` | high |
+| 13 | `UNUSUAL_AMOUNT` (covers "split invoice" too; say which in `detail`) | medium |
+| 14 | `PROMPT_INJECTION` | high |
+
+- `ground_truth.json` uses `CLEAN` for the 6 clean invoices; it is not an `ErrorType`.
+- Fraud-type findings (changed IBAN, sanctioned vendor, duplicate) give `MISMATCH` with high severity.
+- `PROMPT_INJECTION` gives `NEEDS_REVIEW` with a high-severity flag, because the extracted data can't be trusted.
+
+**Severity colours:** high red `#DC2626`, medium orange `#EA580C`, low yellow `#CA8A04`. Check status: pass green, fail red, skipped grey. Always pair colour with an icon and a text label (dark mode, colour-blind users).
 
 - [ ] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus`
 - [ ] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError`
