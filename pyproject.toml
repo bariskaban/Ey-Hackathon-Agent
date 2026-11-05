@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "invoice-verification-agent"
-version = "0.1.0"
-description = "Local, MCP-gated AI agent that verifies invoices against transaction records and Dutch VAT rules."
+name = "vera"
+version = "1.0.0"
+description = "Vera: a local, MCP-gated AI agent that verifies invoices against company records and Dutch VAT rules."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -25,6 +25,9 @@ dependencies = [
     "rapidfuzz>=3.9",
     "reportlab>=4.2",
 ]
+
+[project.scripts]
+vera = "ui.main:main"
 
 [dependency-groups]
 dev = [

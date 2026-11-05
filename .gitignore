@@ -38,6 +38,7 @@ data/runs/
 data/outbox/
 data/cache/
 *.log
+*.err
 
 # NiceGUI
 .nicegui/

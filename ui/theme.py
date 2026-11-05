@@ -8,12 +8,13 @@ Fonts are bundled in ui/static/fonts so the demo works with no internet.
 """
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from enum import Enum
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from nicegui import app, ui
 
@@ -117,7 +118,7 @@ LOGO_SVG = ('<svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true">
 # Formatting helpers
 # --------------------------------------------------------------------------
 def key(x: Any) -> str | None:
-    """Enum or string to its name, so mock strings and real str-Enums compare the same."""
+    """Enum or string to its name, so plain strings and str-Enums compare the same."""
     if x is None:
         return None
     if isinstance(x, Enum):
@@ -145,7 +146,7 @@ def fmt_date(value: Any) -> str:
         d = value
     else:
         try:
-            d = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            d = datetime.fromisoformat(str(value))
         except ValueError:
             return str(value)
     return d.strftime("%d %b %Y")
@@ -155,7 +156,7 @@ def fmt_time(value: Any) -> str:
     if not value:
         return ""
     try:
-        d = value if isinstance(value, datetime) else datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        d = value if isinstance(value, datetime) else datetime.fromisoformat(str(value))
     except ValueError:
         return str(value)
     return d.strftime("%H:%M:%S")

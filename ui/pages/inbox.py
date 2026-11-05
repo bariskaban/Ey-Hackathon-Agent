@@ -9,7 +9,17 @@ from nicegui import background_tasks, ui
 
 from ui.components.widgets import error_label, page_header, severity_tag, verdict_badge
 from ui.services import open_case_count, svc
-from ui.theme import (DOC_STATUS_LABELS, ERROR_SEVERITY, VERDICTS, esc, eur, fmt_date, html, key, shell)
+from ui.theme import (
+    DOC_STATUS_LABELS,
+    ERROR_SEVERITY,
+    VERDICTS,
+    esc,
+    eur,
+    fmt_date,
+    html,
+    key,
+    shell,
+)
 
 ALLOWED = (".pdf", ".png", ".jpg", ".jpeg")
 MAX_MB = 10
@@ -164,7 +174,7 @@ async def inbox_page() -> None:
                               type="negative")
                     return
                 doc = await svc.upload_document(name, data)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
                 ui.notify(f"{name} was not added: {exc}. Try again, or choose a different file.", type="negative")
                 return
             ui.notify(f"Added {name} as {doc.doc_id}.", type="positive")

@@ -7,7 +7,15 @@ from typing import Any
 
 from nicegui import ui
 
-from ui.components.widgets import check_icon, check_word, page_header, role_tag, severity_tag, stamp, verdict_badge
+from ui.components.widgets import (
+    check_icon,
+    check_word,
+    page_header,
+    role_tag,
+    severity_tag,
+    stamp,
+    verdict_badge,
+)
 from ui.services import expected_checks, open_case_count, svc
 from ui.theme import CHECK_LABELS, ROLE_LABELS, SERVER_GROUPS, esc, eur, fmt_date, html, key, shell
 
@@ -228,7 +236,7 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
             except asyncio.CancelledError:
                 state["error"] = "The run was cancelled."
                 show_error()
-            except Exception as exc:  # show it, don't crash the page
+            except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
                 state["error"] = f"{type(exc).__name__}: {exc}"
                 show_error()
             finally:
