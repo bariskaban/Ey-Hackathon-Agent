@@ -104,7 +104,7 @@ The tests generate their own temporary dataset, so they never touch `data/db.sql
 python scripts/start_servers.py
 ```
 
-This starts every server that exists over HTTP (the transactions server is at `http://127.0.0.1:8102/mcp`). Connect to it with the MCP Inspector (`npx @modelcontextprotocol/inspector`, transport "Streamable HTTP"). The agent does not need this; it starts the servers itself.
+This starts all six MCP servers over HTTP (documents on port 8101, transactions 8102, tax_rules 8103, vendor_checks 8104, anomaly_stats 8105, review_cases 8106, each at `/mcp`). Connect to it with the MCP Inspector (`npx @modelcontextprotocol/inspector`, transport "Streamable HTTP"). The agent does not need this; it starts the servers itself.
 
 ## Project files
 

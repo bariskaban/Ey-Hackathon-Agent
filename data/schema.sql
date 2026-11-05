@@ -95,15 +95,41 @@ CREATE TABLE sanctions (
     listed_on        TEXT
 );
 
-CREATE TABLE review_cases (                     -- append-only
-    case_id          TEXT PRIMARY KEY,
-    invoice_id       TEXT NOT NULL,
-    verdict          TEXT NOT NULL,
-    evidence_json    TEXT NOT NULL,
-    created_at       TEXT NOT NULL,
-    status           TEXT NOT NULL DEFAULT 'open'
+CREATE TABLE review_cases (                     -- append-only: evidence is never changed or deleted
+    case_id            TEXT PRIMARY KEY,        -- RC-0001
+    invoice_id         TEXT NOT NULL,
+    verdict            TEXT NOT NULL,
+    evidence_json      TEXT NOT NULL,
+    created_at         TEXT NOT NULL,
+    status             TEXT NOT NULL DEFAULT 'open',   -- only a person changes this, in the UI
+    status_changed_by  TEXT,
+    status_changed_at  TEXT,
+    status_reason      TEXT
 );
+
+CREATE TABLE case_notes (                       -- append-only
+    note_id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_id            TEXT NOT NULL REFERENCES review_cases(case_id),
+    ts                 TEXT NOT NULL,
+    author             TEXT NOT NULL,           -- 'agent' or a person's name
+    text               TEXT NOT NULL
+);
+
+CREATE TRIGGER review_cases_no_delete BEFORE DELETE ON review_cases
+BEGIN SELECT RAISE(ABORT, 'review cases are append-only'); END;
+
+CREATE TRIGGER review_cases_evidence_immutable
+BEFORE UPDATE OF case_id, invoice_id, verdict, evidence_json, created_at ON review_cases
+BEGIN SELECT RAISE(ABORT, 'review case evidence cannot be changed'); END;
+
+CREATE TRIGGER case_notes_no_update BEFORE UPDATE ON case_notes
+BEGIN SELECT RAISE(ABORT, 'case notes are append-only'); END;
+
+CREATE TRIGGER case_notes_no_delete BEFORE DELETE ON case_notes
+BEGIN SELECT RAISE(ABORT, 'case notes are append-only'); END;
 
 CREATE INDEX idx_txn_vendor_date ON transactions(vendor_id, date);
 CREATE INDEX idx_seen_vendor ON invoices_seen(vendor_id, normalized_invoice_no);
 CREATE INDEX idx_po_vendor ON purchase_orders(vendor_id);
+CREATE INDEX idx_cases_invoice ON review_cases(invoice_id, status);
+CREATE INDEX idx_notes_case ON case_notes(case_id);

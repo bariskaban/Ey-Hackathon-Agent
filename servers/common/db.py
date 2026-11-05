@@ -17,3 +17,19 @@ def read_only():
         yield con
     finally:
         con.close()
+
+
+@contextmanager
+def writable():
+    """A read-write connection. Only the review_cases server and the human review actions use this;
+    the schema's triggers keep review cases append-only even here."""
+    con = sqlite3.connect(db_path(), timeout=10)
+    con.row_factory = sqlite3.Row
+    try:
+        yield con
+        con.commit()
+    except Exception:
+        con.rollback()
+        raise
+    finally:
+        con.close()

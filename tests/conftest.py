@@ -54,3 +54,12 @@ def inbox(ground_truth):
     yield folder, result
     os.environ.pop("INVOICE_INBOX_DIR")
     os.environ.pop("INVOICE_CACHE_DIR")
+
+
+@pytest.fixture
+def temp_db(tmp_path, monkeypatch):
+    """A private copy of the database for tests that write to it (review cases) or change its data."""
+    target = tmp_path / "db.sqlite"
+    shutil.copy(_DATA_DIR / "db.sqlite", target)
+    monkeypatch.setenv("INVOICE_DB_PATH", str(target))
+    return target

@@ -1,9 +1,7 @@
 """The verification pipeline over all 20 test invoices, without Ollama.
 
 A stub model "extracts" the ground-truth invoice, so these tests exercise the real document
-reading, tool calls, fixed checks and verdict rules. The invoices whose planted error needs a
-Phase 5 check (VAT rules, bank details, sanctions, anomalies) are marked as expected failures
-until those checks exist (strict, so the marker must be removed when they start passing).
+reading, tool calls, fixed checks and verdict rules. Every planted error type is covered by a check.
 """
 
 import asyncio
@@ -25,8 +23,9 @@ from agent.schemas import (
 )
 from servers.documents import tools as document_tools
 
-NEEDS_PHASE_5 = {"vat_arithmetic", "wrong_vat_rate", "reverse_charge_error", "invalid_vat", "missing_fields",
-                 "changed_bank", "sanctioned", "unusual_amount"}
+NEEDS_PHASE_5: set[str] = set()  # every planted error now has a check
+
+pytestmark = pytest.mark.usefixtures("temp_db")  # review cases are written during verification
 
 
 def run_pipeline(entry, **kwargs):
@@ -213,3 +212,19 @@ def test_json_dump_of_verdict_has_every_contract_field(inbox, case):
     data = json.loads(verdict.model_dump_json())
     assert {"invoice_id", "verdict", "discrepancies", "evidence_transaction_ids", "risk_flags", "checks",
             "confidence", "reasoning"} <= set(data)
+
+
+@pytest.mark.parametrize(("discrepancies", "incomplete", "expected"), [
+    ([], ["invoice_date could not be read"], VerdictStatus.NEEDS_REVIEW),  # nothing wrong found, but incomplete
+    ([_d(ErrorType.DUPLICATE_INVOICE, Severity.HIGH)], ["invoice_date could not be read"], VerdictStatus.MISMATCH),
+    ([_d(ErrorType.UNKNOWN_VENDOR, Severity.HIGH)], ["invoice_date could not be read"], VerdictStatus.NOT_FOUND),
+    ([_d(ErrorType.VAT_ARITHMETIC_ERROR, Severity.LOW)], ["invoice_date could not be read"],
+     VerdictStatus.NEEDS_REVIEW),  # a low finding does not settle an incomplete reading
+])
+def test_incomplete_data_holds_back_a_clean_verdict_but_never_hides_a_real_finding(discrepancies, incomplete, expected):
+    assert checks.decide_verdict(discrepancies, [], incomplete) == expected
+
+
+def test_untrusted_data_overrides_even_a_definite_finding():
+    duplicate = [_d(ErrorType.DUPLICATE_INVOICE, Severity.HIGH)]
+    assert checks.decide_verdict(duplicate, ["key field could not be confirmed"], []) == VerdictStatus.NEEDS_REVIEW

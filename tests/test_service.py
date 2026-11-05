@@ -10,6 +10,8 @@ from agent.schemas import Invoice, VerdictStatus
 from servers.common.config import INVOICES_DIR
 from servers.documents import manifest
 
+pytestmark = pytest.mark.usefixtures("temp_db")  # review cases are written during verification
+
 
 def test_verify_streams_records_and_replays(inbox, case):
     entry = case("quantity_not_received")
@@ -36,7 +38,7 @@ def test_verify_streams_records_and_replays(inbox, case):
     listed = {d.doc_id: d for d in documents}
     assert len(listed) == 20 and listed[entry["invoice_id"]].verdict == VerdictStatus.MISMATCH
 
-    assert {e.role for e in audit_all} == {"extractor", "verifier"}
+    assert {e.role for e in audit_all} == {"extractor", "verifier", "reporter"}  # a MISMATCH opens a review case
     assert [e.tool for e in audit_extractor] == ["convert_document"]
     assert audit_tx and all(e.server == "transactions" for e in audit_tx)
     tool_events = [e for e in events if e.type == "tool_call"]
@@ -60,7 +62,8 @@ def test_system_status_reports_ollama_and_the_data(inbox, monkeypatch):
     monkeypatch.setattr(LLM, "available_models", up)
     status = asyncio.run(service.system_status())
     assert status.ollama_up and status.model_available == (status.model in ["qwen3:8b", "llama3.1:8b"])
-    assert set(status.servers) == {"documents", "transactions"} and not any(status.servers.values())  # not started
+    assert set(status.servers) == {"documents", "transactions", "tax_rules", "vendor_checks", "anomaly_stats",
+                                   "review_cases"} and not any(status.servers.values())  # none started yet
 
 
 def test_unknown_document_streams_an_error(inbox):
@@ -95,11 +98,12 @@ def test_upload_accepts_a_valid_pdf_and_rejects_the_rest(inbox):
     assert not (manifest.inbox_dir() / "notes.txt").exists()
 
 
-def test_functions_for_later_phases_say_so():
+def test_the_evaluation_runner_is_not_built_yet():
     async def scenario():
-        for call in (service.list_cases(), service.get_case("C-1"), service.set_case_status("C-1", "approved", "a", "b"),
-                     service.export_evidence_pack("C-1"), service.list_eval_runs()):
-            with pytest.raises(NotImplementedError):
-                await call
+        with pytest.raises(NotImplementedError):
+            await service.list_eval_runs()
+        with pytest.raises(NotImplementedError):
+            async for _ in service.run_eval("qwen3:8b"):
+                pass
 
     asyncio.run(scenario())
