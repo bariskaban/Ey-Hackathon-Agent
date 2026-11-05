@@ -127,6 +127,7 @@ def flat_invoice(invoice: Invoice) -> dict:
         "vat_lines": [{"rate": v["rate"], "net": v["base"], "vat": v["vat"]} for v in data["vat_breakdown"]],
         "total_excl_vat": data["total_excl_vat"], "total_vat": data["total_vat"],
         "total_incl_vat": data["total_incl_vat"], "iban_last4": _last4(supplier["iban"]),
+        "iban": supplier["iban"], "notes": data["notes"],  # not shown as fields; used to box the value on the page
         "reverse_charge_text": "Reverse charge" if data["reverse_charge"] else None,
     }
 

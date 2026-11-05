@@ -8,10 +8,33 @@ from typing import Any
 
 from nicegui import run, ui
 
-from ui.components.widgets import (check_icon, check_word, error_label, evidence_table, page_header, severity_tag,
-                                   stamp, verdict_badge, yes_no)
+from servers.common.config import OUTBOX_DIR
+from ui import highlights
+from ui.components.widgets import (
+    check_icon,
+    check_word,
+    error_label,
+    evidence_table,
+    page_header,
+    severity_tag,
+    stamp,
+    verdict_badge,
+    yes_no,
+)
 from ui.services import open_case_count, svc
-from ui.theme import CHECK_LABELS, ERROR_LABELS, SERVER_GROUPS, SEVERITIES, VERDICTS, esc, eur, fmt_date, html, key, shell
+from ui.theme import (
+    CHECK_LABELS,
+    ERROR_LABELS,
+    SERVER_GROUPS,
+    SEVERITIES,
+    VERDICTS,
+    esc,
+    eur,
+    fmt_date,
+    html,
+    key,
+    shell,
+)
 
 FIELD_LABELS = [
     ("supplier_name", "Supplier"), ("supplier_country", "Supplier country"),
@@ -64,7 +87,7 @@ async def verdict_page(doc_id: str) -> None:
                    f'<a class="tm-btn" href="/audit?doc={esc(doc_id)}">See what the AI saw</a>'
                    + (f'<a class="tm-btn tm-btn-primary" href="/review/{esc(v.review_case_id)}">Open review case</a>'
                       if v.review_case_id else "") + "</div>")
-        html(f'<div class="tm-header">'
+        html('<div class="tm-header">'
              + page_header(f"{inv.supplier_name}, invoice {inv.invoice_number or ''}".strip(", "),
                            f"Verified in {v.seconds} seconds with {v.tool_calls} tool calls on "
                            f"<span class='tm-num'>{esc(v.model)}</span>",
@@ -103,13 +126,22 @@ async def verdict_page(doc_id: str) -> None:
                 html('<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
                      '<h2 class="tm-h2">Invoice</h2><span class="tm-small">'
                      f'{"The original document" if original else "Drawn from the extracted fields"}</span></div>')
+                boxes = []
+                if original and v.discrepancies:
+                    boxes = await run.io_bound(highlights.locate, path, v.discrepancies, inv)
+                if is_image and boxes:
+                    pages = await run.io_bound(_image_page, path)  # drawn like a page so the boxes can sit on it
                 if pages:
                     for n, src in enumerate(pages, 1):
-                        html(f'<img src="{src}" alt="Invoice page {n} of {len(pages)}" '
-                             'style="width:100%;border:1px solid var(--tm-rule);background:#FFFFFF">')
+                        html(f'<div style="position:relative"><img src="{src}" alt="Invoice page {n} of {len(pages)}" '
+                             'style="width:100%;display:block;border:1px solid var(--tm-rule);background:#FFFFFF">'
+                             + "".join(_box_html(b, v.discrepancies[b.index]) for b in boxes if b.page == n - 1)
+                             + "</div>")
                 elif is_image:
                     ui.image(str(path)).style("width:100%;border:1px solid var(--tm-rule)")
-                else:
+                if original and v.discrepancies:
+                    _highlight_legend(path, v, boxes)
+                if not original:
                     html(_invoice_sheet(inv, v, failed))
                     html('<p class="tm-small" style="margin:0"><mark style="background:#E4F07A;padding:0 4px;outline:2px solid #DC2626">'
                          'Marked</mark> values are where a check failed.</p>')
@@ -186,6 +218,63 @@ def _pdf_pages(path: Path, max_pages: int = 3) -> list[str]:
     except Exception:
         return []
     return out
+
+
+def _image_page(path: Path, max_width: int = 1400) -> list[str]:
+    """A photo or scan as one PNG data URI, shrunk to a sensible width."""
+    from PIL import Image
+
+    with Image.open(path) as image:
+        image = image.convert("RGB")
+        if image.width > max_width:
+            image = image.resize((max_width, round(image.height * max_width / image.width)))
+        buf = io.BytesIO()
+        image.save(buf, format="PNG")
+    return ["data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()]
+
+
+def _colour(discrepancy: Any) -> str:
+    return SEVERITIES.get(key(discrepancy.severity) or "", SEVERITIES["high"])["base"]
+
+
+def _box_html(box: highlights.Box, d: Any) -> str:
+    """A box over the page, in the severity's colour, with the discrepancy's number. The original is not touched."""
+    colour = _colour(d)
+    tip = f"{box.index + 1}. {error_label(d.type)}. Expected: {d.expected}. Found: {d.found}."
+    return (f'<div role="img" aria-label="{esc(tip)}" title="{esc(tip)}" style="position:absolute;box-sizing:border-box;'
+            f'left:{box.x * 100:.2f}%;top:{box.y * 100:.2f}%;width:{box.w * 100:.2f}%;height:{box.h * 100:.2f}%;'
+            f'border:2.5px solid {colour};background:{colour}33;border-radius:3px">'
+            f'<span aria-hidden="true" style="position:absolute;top:-21px;left:-1px;min-width:18px;height:18px;border-radius:9px;'
+            f'background:{colour};color:#fff;font:700 11px/18px sans-serif;text-align:center">{box.index + 1}</span></div>')
+
+
+def _highlight_legend(path: Path, v: Any, boxes: list[highlights.Box]) -> None:
+    """What each box means, which findings could not be placed on the page, and the annotated download."""
+    shown = {b.index for b in boxes}
+    items = []
+    for i, d in enumerate(v.discrepancies):
+        where = "boxed on the page" if i in shown else "not a value printed on the page, so there is nothing to box"
+        items.append(f'<li style="margin:2px 0"><span style="display:inline-block;min-width:20px;text-align:center;'
+                     f'border-radius:10px;background:{_colour(d)};color:#fff;font-weight:700;font-size:12px">{i + 1}</span> '
+                     f'<strong>{esc(error_label(d.type))}</strong>. Expected: {esc(d.expected)}. Found: {esc(d.found)}. '
+                     f'<span class="tm-small">({where})</span></li>')
+    html('<ol style="list-style:none;margin:0;padding:0;font-size:14px">' + "".join(items) + "</ol>")
+    if not boxes:
+        return
+
+    async def download() -> None:
+        labels = [(_colour(d), f"{error_label(d.type)}. Expected: {d.expected}. Found: {d.found}.") for d in v.discrepancies]
+        out = OUTBOX_DIR / f"{v.doc_id}-annotated.pdf"
+        try:
+            await run.io_bound(highlights.annotate, path, boxes, labels, out)
+        except Exception as exc:  # noqa: BLE001 - tell the person, keep the page working
+            ui.notify(f"The annotated copy was not created: {exc}", type="negative")
+            return
+        ui.download.file(out, out.name)
+
+    ui.button("Download annotated copy", on_click=download).props("no-caps flat").classes("tm-btn")         .style("align-self:flex-start")
+    html('<p class="tm-small" style="margin:0">The original file is not changed. The copy is a separate PDF with the boxes '
+         'drawn on it and a last page that lists the findings.</p>')
 
 
 def _flag_html(v: Any, flag: Any) -> str:
