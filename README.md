@@ -114,15 +114,8 @@ python eval/run_eval.py
 
 - By default it runs all 20 invoices 3 times each (about 30 minutes) and prints a table: expected against actual verdict, whether the planted error was caught and by which check, whether the runs agreed, and the time and tool calls per run.
 - Each result is `pass`, `safe_fail` or `fail`. A `safe_fail` is a scan whose key field could not be read and that was therefore sent to a person instead of being approved or rejected. It is counted separately from a wrong answer.
-- Useful options: `--runs 1 --no-agent` for a quick check, `--model <name>` to try another model, or list invoice ids (for example `INV-004 INV-018`) to run only those.
+- Useful options: `--runs 1 --no-agent` for a quick check, `--model <name>` to try another Ollama model, or list invoice ids (for example `INV-004 INV-018`) to run only those.
 - Every run is saved in `data/runs/eval/`. Evaluation never opens review cases.
-
-To compare models, pull each one first and run the evaluation once per model (the models are large, so check your disk space and that they fit in your GPU memory):
-
-```bash
-ollama pull gpt-oss:20b
-python eval/run_eval.py --model gpt-oss:20b
-```
 
 ### 9. Run the interface
 

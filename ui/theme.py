@@ -99,8 +99,8 @@ NAV = [  # (key, label, path, svg path data)
     ("verify", "Live verification", "/verify", '<path d="M22 12h-4l-3 8L9 4l-3 8H2"/>'),
     ("verdict", "Verdicts", "/verdict", '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/>'),
     ("review", "Review queue", "/review", '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>'),
+    ("demo", "Demo", "/demo", '<circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/>'),
     ("audit", "What the AI saw", "/audit", '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'),
-    ("eval", "Eval results", "/eval", '<path d="M3 3v18h18"/><path d="M8 17V11"/><path d="M13 17V7"/><path d="M18 17v-4"/>'),
 ]
 
 BRAND = "Vera"
@@ -205,6 +205,20 @@ TICK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#158
 CROSS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>'
 
 
+def status_chip(status: Any) -> str:
+    """The header chip: is the model up, and how many servers. Always a word as well as a colour."""
+    servers_up, servers_total = getattr(status, "servers_up", None), getattr(status, "servers_total", None)
+    if not getattr(status, "ollama_up", True):
+        dot, text = "#B91C1C", "Ollama is not running"
+    elif servers_total and servers_up != servers_total:
+        dot, text = "#B45309", f"{servers_up} of {servers_total} servers up"
+    else:
+        model = esc(getattr(status, "model", "") or "model")
+        dot, text = "#15803D", f"{model} ready" + (f", {servers_total} servers up" if servers_total else "")
+    return (f'<div class="vr-topbar"><span class="vr-pill vr-pill-strong">{LOCK}Runs 100% locally</span>'
+            f'<span class="vr-pill" role="status"><span class="vr-dot" style="background:{dot}"></span>{text}</span></div>')
+
+
 @contextmanager
 def shell(active: str, status: Any, open_cases: int | None = None) -> Iterator[ui.element]:
     """The app frame every page uses. Yields the main content column."""
@@ -229,4 +243,5 @@ def shell(active: str, status: Any, open_cases: int | None = None) -> Iterator[u
                      '<strong>Private by design</strong>Client data stays on this machine. '
                      'Every tool call the agent makes is logged.</span></div>')
         with ui.element("main").classes("vr-main") as main:
+            html(status_chip(status))
             yield main

@@ -198,3 +198,10 @@ body.body--dark .vr-step-failed{background:#3A1F25}
 .q-btn.vr-nav-link{color:var(--vr-rail-text) !important}
 .q-btn.vr-nav-link:hover{color:#fff !important}
 .q-btn.vr-nav-link .q-icon{color:inherit;opacity:.85}
+
+/* ---------------------------------------------------------------- header chips and the demo page */
+.vr-topbar{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-bottom:-8px}
+.vr-topbar .vr-pill{height:32px;font-size:13px}
+.vr-topbar .vr-pill svg{flex:none}
+.vr-demo-n{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;font-family:var(--vr-display);
+  font-size:18px;font-weight:700;color:var(--vr-accent);background:var(--vr-accent-soft)}

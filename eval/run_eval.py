@@ -1,7 +1,7 @@
 """Run the evaluation: every test invoice, several times, against the known answers.
 
     python eval/run_eval.py                       # all 20 invoices, 3 runs each, qwen3:8b
-    python eval/run_eval.py --model gpt-oss:20b   # another model (pull it first with ollama)
+    python eval/run_eval.py --model <name>       # another model (pull it first with ollama)
     python eval/run_eval.py --runs 1 --no-agent   # quick check: one run, no model assessment
     python eval/run_eval.py INV-004 INV-018       # selected invoices
 

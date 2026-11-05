@@ -10,9 +10,8 @@ from ui.components.widgets import error_label, page_header
 from ui.services import open_case_count, svc
 from ui.theme import VERDICTS, esc, fmt_date, html, key, shell
 
-MODELS = {"qwen3:8b": "qwen3:8b", "gpt-oss:20b": "gpt-oss:20b", "qwen3:30b-a3b": "qwen3:30b-a3b"}
+MODELS = {"qwen3:8b": "qwen3:8b"}
 TICK_CH, CROSS_CH, DASH = "\u2713", "\u2715", "\u2013"
-WHERE = {"qwen3:8b": "All on the GPU", "gpt-oss:20b": "GPU and system memory", "qwen3:30b-a3b": "GPU and system memory"}
 
 
 def _summary(report: Any) -> dict[str, Any]:
@@ -48,7 +47,7 @@ async def eval_page() -> None:
             body.clear()
             with body:
                 if not reports:
-                    html('<div class="vr-empty">No eval runs yet. Choose a model and select "Run eval".</div>')
+                    html('<div class="vr-empty">No eval runs yet. Select "Run eval".</div>')
                     return
                 latest = reports[0]
                 s = _summary(latest)
@@ -104,28 +103,6 @@ async def eval_page() -> None:
                      '<div class="vr-table-wrap"><table class="vr-table"><thead><tr><th>Invoice</th><th>Planted error</th>'
                      f'<th>Expected verdict</th>{run_heads}<th>Caught by</th><th class="vr-right">Seconds</th></tr></thead>'
                      f'<tbody>{"".join(rows)}</tbody></table></div></section>')
-
-                best: dict[str, Any] = {}
-                for rep in reports:  # newest first, so the first per model wins
-                    best.setdefault(key(rep.model), rep)
-                cmp_rows = []
-                for m in MODELS:
-                    rep = best.get(m)
-                    if rep is None:
-                        cmp_rows.append(f'<tr><td class="vr-num" style="font-weight:500">{m}</td><td>{WHERE[m]}</td>'
-                                        f'<td colspan="5" class="vr-small">Not run yet</td></tr>')
-                        continue
-                    t = _summary(rep)
-                    cmp_rows.append(f'<tr><td class="vr-num" style="font-weight:500">{m}</td><td>{WHERE[m]}</td>'
-                                    f'<td class="vr-num vr-right">{t["correct"]} of {t["n"]}</td>'
-                                    f'<td class="vr-num vr-right">{t["caught"]} of {t["planted"]}</td>'
-                                    f'<td class="vr-num vr-right">{t["consistent"]} of {t["n"]}</td>'
-                                    f'<td class="vr-num vr-right">{t["avg_s"]}</td><td class="vr-num vr-right">{t["avg_calls"]}</td></tr>')
-                html('<section aria-label="Model comparison" class="vr-card"><div class="vr-card-head"><h2 class="vr-h2">Model comparison</h2></div>'
-                     '<div class="vr-table-wrap"><table class="vr-table"><thead><tr><th>Model</th><th>Where it runs</th>'
-                     '<th class="vr-right">Correct</th><th class="vr-right">Errors caught</th><th class="vr-right">Consistent</th>'
-                     '<th class="vr-right">Seconds per invoice</th><th class="vr-right">Tool calls per invoice</th></tr></thead>'
-                     f'<tbody>{"".join(cmp_rows)}</tbody></table></div></section>')
 
         async def run() -> None:
             if state["running"]:

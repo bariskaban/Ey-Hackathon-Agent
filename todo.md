@@ -20,7 +20,7 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 
 - [x] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, runs, `.venv`), and `README.md` with run instructions
 - [x] Python 3.11+, use `uv` for the environment, one shared `pyproject.toml`
-- [x] Install Ollama and pull the models: `qwen3:8b` (later `gpt-oss:20b` and the Qwen3 30B-A3B model for comparison; check the exact tags in the Ollama library)
+- [x] Install Ollama and pull the model: `qwen3:8b`
 - [x] Install Tesseract (English language pack only), and Node (only needed for `npx @modelcontextprotocol/inspector`)
 - [x] **Agree the contract (section 1) together**, about an hour. TECH writes `schemas.py`; UI reviews field names and what each screen needs. (Conventions agreed, see "Agreed decisions" in section 1; the full `schemas.py` models are still open in section 1.)
 - [x] Agree the verdict names, the 14 error-type names and the severity colours (they show up everywhere in the UI). (Agreed, see "Agreed decisions" in section 1; enums live in `agent/schemas.py`; the verdict enum is `VerdictStatus` so `Verdict` stays free for the full result model.)
@@ -152,7 +152,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] `agent/checks.py`: fixed checks (vendor, duplicate, already paid, PO and receipt match) (Done: vendor, injection scan, duplicate, already paid, PO amount and goods receipt. The verdict comes from fixed rules in code; the model can only escalate to `NEEDS_REVIEW`. The remaining checks came in Phase 5.)
 - [x] `agent/service.py`: real implementation of `verify()` emitting every event type in section 1
 - [x] Record each run's events to `data/runs/<doc_id>.jsonl` (powers the UI's replay mode)
-- [ ] **Milestone M2:** one invoice end to end, live in the UI
+- [x] **Milestone M2:** one invoice end to end, live in the UI
 
 ### Phase 5: Rule servers
 - [x] `tax_rules`:
@@ -172,7 +172,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 - [x] `eval/run_eval.py`: all 20 invoices × 3 runs. Per invoice: expected vs actual verdict, error caught, which check caught it, consistency across runs, seconds, tool calls
 - [x] `run_eval()` in the service streams `EvalProgress` for the UI
-- [x] ~~Compare models: qwen3:8b against gpt-oss:20b and Qwen3-30B-A3B~~ Dropped: qwen3:8b is accurate enough (18 of 20 pass, 2 safe fails, 0 fails, all consistent; see `eval/results/qwen3-8b.txt`), so no larger model is needed. `python eval/run_eval.py --model <name>` still works if that changes.
+- [x] ~~Compare models~~ Dropped: qwen3:8b is accurate enough (18 of 20 pass, 2 safe fails, 0 fails, all consistent; see `eval/results/qwen3-8b.txt`), so no larger model is needed. `python eval/run_eval.py --model <name>` still works if that changes.
 - [x] Fix the prompts and checks for any invoice that fails or flips between runs (qwen3:8b: the first run failed every invoice because the model over-escalated clean invoices to NEEDS_REVIEW. Its suggestions are now advisory and labelled `(model)`; escalation is opt-in. After that: 18 of 20 pass, 2 safe fails, 0 fails, 20 of 20 consistent. See `eval/results/qwen3-8b.txt`.)
 
 ### Stretch [TECH]
@@ -187,7 +187,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 ### U0: Design first
 - [ ] Wireframes for every page (Excalidraw, Figma or paper) before writing code. Pages: Inbox, Live verification, Verdict, Review queue, Audit log, Eval results, Demo
 - [x] Design tokens in `ui/theme.py`: colours (verdict and severity colours agreed in kickoff), fonts, spacing, light and dark mode
-- [ ] App shell: left nav, header with a **"Runs 100% locally"** badge and a system status chip (Ollama up, model name, servers up, from `system_status()`) (Partly done: the left nav and dark-mode switch exist; the header with the local badge and status chip does not. `shell()` receives `system_status()` but does not show it.)
+- [x] App shell: left nav, header with a **"Runs 100% locally"** badge and a system status chip (Ollama up, model name, servers up, from `system_status()`)
 - [x] Product name, logo and favicon
 - [x] Status is never shown by colour alone: always add an icon or label (accessibility, and readable on a projector)
 - [x] Euro formatting throughout, English style (`€1,234.56`)
@@ -195,7 +195,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 ### U1: Mock-first setup
 - [x] `ui/main.py` running `ui.run()` with page routing
 - [x] `ui/mock_service.py` and fixtures (see section 1), with an `INVOICE_SERVICE` env-var switch
-- [ ] **Milestone M1:** every page clickable on mock data (All six pages work on mock data; the Demo page is still missing.)
+- [x] **Milestone M1:** every page clickable on mock data
 
 ### U2: Inbox
 - [x] Drag-and-drop upload (`ui.upload`), multiple files at once, file type and size checks with friendly errors
@@ -218,7 +218,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] Bank panel: IBAN matches the vendor master or not (last 4 digits only), sanctions screening result
 - [x] Evidence transactions table (masked values, exactly as the agent saw them)
 - [x] "Open review case" button
-- [ ] Stretch: highlight the mismatched fields directly on the invoice image (Only on the drawn fallback sheet, not on the real PDF image.)
+- [x] Stretch: highlight the mismatched fields directly on the invoice image (Done on the real document: boxes from the PDF text layer or OCR, with a downloadable annotated copy. The original file is never changed.)
 
 ### U5: Review queue
 - [x] Case list sorted by severity, with filters by status and error type
@@ -241,11 +241,11 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] Click a row → verdict page for that invoice
 
 ### U8: Demo mode and polish
-- [ ] Demo page: one button per demo-script step (idea.md §10), each loading the right invoice and starting verification
-- [ ] **Replay mode:** play back a recorded `data/runs/*.jsonl` event stream at real speed, so the demo still works if the live model is slow or fails
+- [x] Demo page: one button per demo-script step (idea.md §10), each loading the right invoice and starting verification (`/demo`; steps 1 to 6 start an invoice, steps 7 and 8 open the review queue and audit log. The eval step is left out on purpose: the Eval results page is hidden from the menu, as it is an internal tool, and is still at `/eval`.)
+- [x] **Replay mode:** play back a recorded `data/runs/*.jsonl` event stream at real speed, so the demo still works if the live model is slow or fails (`svc.replay()`; long pauses are cut to under 2 seconds. Switch on the Demo page or add `?replay=1` to a verify URL.)
 - [ ] Empty, loading and error states on every page (Empty and error states exist on most pages; there are no loading states yet.)
-- [ ] Check the layout at 1366×768 and 1920×1080 (projector sizes)
-- [ ] Keyboard shortcuts for the demo (next scenario, toggle replay)
+- [x] Check the layout at 1366×768 and 1920×1080 (projector sizes)
+- [x] Keyboard shortcuts for the demo (on the Demo page: 1 to 6 start a step, R switches live and recording)
 - [ ] Use the same wording for verdicts, error types and severities everywhere
 
 ### Stretch [UI]

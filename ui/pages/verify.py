@@ -222,7 +222,7 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
             error_box.clear()
             render()
             try:
-                async for ev in svc.verify(doc_id):
+                async for ev in (svc.replay(doc_id) if replay else svc.verify(doc_id)):
                     handle(ev)
                     render()
             except asyncio.CancelledError:

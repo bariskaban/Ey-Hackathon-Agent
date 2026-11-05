@@ -21,7 +21,7 @@ from nicegui import app, ui
 from ui import theme
 
 # Importing the page modules registers their routes (@ui.page).
-from ui.pages import audit, evals, inbox, review, verdict, verify  # noqa: F401
+from ui.pages import audit, demo, evals, inbox, review, verdict, verify  # noqa: F401
 from ui.services import MODE
 
 theme.setup()

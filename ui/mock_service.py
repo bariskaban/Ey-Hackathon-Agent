@@ -260,6 +260,12 @@ def _verdict_for(doc_id: str) -> dict:
             "model": "mock", "seconds": 0, "tool_calls": 0, "created_at": _now()}
 
 
+async def replay(doc_id: str, speed: float = 1.0) -> AsyncIterator[Any]:
+    """The mock has no recordings of its own: a replay is the same canned stream."""
+    async for event in verify(doc_id):
+        yield event
+
+
 async def verify(doc_id: str) -> AsyncIterator[Any]:
     """Stream events for one invoice. The last event is the verdict (plus report stages)."""
     if doc_id not in _st().docs:

@@ -64,7 +64,6 @@ Small local models (~8B) are unreliable at long, open-ended tool use. So:
 | Language | Python 3.11+ |
 | LLM runtime | **Ollama** (OpenAI-compatible API, tool calling, JSON-schema `format`) |
 | Agent model | **Qwen3 8B, 4-bit (Q4_K_M)** (~5GB, runs entirely on the GPU) |
-| Stronger, slower option | **gpt-oss-20b** or **Qwen3-30B-A3B** (MoE models, partly in system RAM) |
 | Document → Markdown | **Microsoft MarkItDown** (`markitdown[pdf,docx,xlsx]`), wrapped in our own MCP server |
 | OCR fallback | `pytesseract` (English language pack only) or PaddleOCR |
 | Language check | `langdetect`: anything that isn't English is sent to review |
@@ -355,7 +354,7 @@ ey_hackathon_agent/
 
 **Phase 6: Eval**
 - All 20 invoices, 3 runs each.
-- Compare Qwen3 8B with gpt-oss-20b and Qwen3-30B-A3B.
+- Check Qwen3 8B alone: it is accurate enough, so no larger model is needed.
 
 **Phase 7: UI and demo polish**
 - Replay recordings and rehearsal.
