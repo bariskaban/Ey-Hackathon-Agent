@@ -7,6 +7,7 @@ data only. The only tools the extractor may use are the documents server's, via 
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import ValidationError
@@ -159,6 +160,7 @@ async def extract_from_document(llm: LLM, doc_id: str, doc: dict) -> Extraction:
         content = response.message.content or ""
         try:
             result.invoice = Invoice.model_validate_json(content)
+            normalise_dates(result.invoice)
             result.low_confidence_fields = find_low_confidence_fields(result.invoice, doc["markdown"])
             result.error = None
             return result
@@ -175,13 +177,55 @@ async def extract_from_document(llm: LLM, doc_id: str, doc: dict) -> Extraction:
 
 
 def _squash(text: str) -> str:
-    return re.sub(r"[\s|]+", "", text).lower()
+    return re.sub(r"[\s|,]+", "", text).lower()  # a line break and a comma read the same
 
 
 def _number_forms(value: Decimal) -> set[str]:
-    forms = {f"{value:,.2f}", f"{value:.2f}", str(value.normalize() if value == value.to_integral() else value)}
+    """The ways an amount is printed: 4,304.47 and 4304.47, and the Dutch and German 4.304,47 and 4304,47."""
+    english = f"{value:,.2f}"
+    european = english.replace(",", "#").replace(".", ",").replace("#", ".")
+    forms = {english, f"{value:.2f}", european, f"{value:.2f}".replace(".", ","),
+             str(value.normalize() if value == value.to_integral() else value)}
     if value == value.to_integral():
         forms.add(str(int(value)))
+    return {_squash(f) for f in forms}
+
+
+DATE_FIELDS = {"invoice_date", "supply_date", "due_date"}
+DATE_FORMATS = ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d %b %Y", "%d %B %Y", "%B %d, %Y", "%b %d, %Y")
+
+
+def to_iso_date(value: str | None) -> str | None:
+    """A date as printed ("01 Nov 2026", "27/10/2026", "October 27, 2026") to ISO. Day first when numeric.
+
+    Anything that is not a real date in a known style is returned unchanged, so a misread still shows up.
+    """
+    if not value:
+        return value
+    text = value.strip()
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        return text
+    for fmt in DATE_FORMATS[1:] + ("%d/%m/%y", "%d.%m.%y", "%d-%m-%y", "%d %b, %Y", "%B %d %Y"):
+        try:
+            return datetime.strptime(text, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return value
+
+
+def normalise_dates(invoice: Invoice) -> None:
+    for name in DATE_FIELDS:
+        setattr(invoice, name, to_iso_date(getattr(invoice, name)))
+
+
+def _date_forms(value: str) -> set[str]:
+    """The ways a date is printed, with and without a leading zero on the day and month."""
+    try:
+        day = date.fromisoformat(value)
+    except ValueError:
+        return {_squash(value)}
+    forms = {day.strftime(fmt) for fmt in DATE_FORMATS}
+    forms |= {f.replace(f"{day.day:02d}", str(day.day), 1) for f in list(forms) if f.startswith(f"{day.day:02d}")}
     return {_squash(f) for f in forms}
 
 
@@ -199,6 +243,9 @@ def find_low_confidence_fields(invoice: Invoice, markdown: str) -> list[str]:
             return
         if isinstance(value, Decimal):
             if not any(form in haystack for form in _number_forms(value)):
+                flagged.append(path)
+        elif path in DATE_FIELDS:
+            if not any(form in haystack for form in _date_forms(value)):
                 flagged.append(path)
         elif isinstance(value, str) and _squash(value) not in haystack:
             flagged.append(path)

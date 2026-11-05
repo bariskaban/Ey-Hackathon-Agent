@@ -112,6 +112,56 @@ def test_low_confidence_flags_values_not_in_the_source():
     assert extract.find_low_confidence_fields(invoice, ENGLISH_DOC) == ["invoice_date"]
 
 
+@pytest.mark.parametrize("printed_amount, printed_date", [
+    ("EUR 4,304.47", "2026-10-27"),        # English amounts, ISO date
+    ("€ 4.304,47", "27/10/2026"),      # Dutch and German amounts, day first
+    ("4304,47 EUR", "27.10.2026"),         # no thousands mark
+    ("4 304,47", "October 27, 2026"),      # a space as the thousands mark
+    ("€4304.47", "27 Oct 2026"),
+])
+def test_amounts_and_dates_are_found_however_they_are_printed(printed_amount, printed_date):
+    """A faithful extraction must not look doubtful just because the invoice uses Dutch number or date style."""
+    invoice = Invoice.model_validate({"invoice_number": "F-1", "invoice_date": "2026-10-27",
+                                      "total_incl_vat": "4304.47", "supplier": {"name": "Acme B.V."}})
+    text = f"Invoice F-1 dated {printed_date}. Total due {printed_amount}. Acme B.V."
+    assert extract.find_low_confidence_fields(invoice, text) == []
+
+
+@pytest.mark.parametrize("printed, iso", [
+    ("2026-10-27", "2026-10-27"), ("01 Nov 2026", "2026-11-01"), ("27/10/2026", "2026-10-27"),
+    ("27.10.2026", "2026-10-27"), ("27-10-2026", "2026-10-27"), ("October 27, 2026", "2026-10-27"),
+    ("27 October 2026", "2026-10-27"), ("1 Nov 2026", "2026-11-01"), ("27/10/26", "2026-10-27"),
+])
+def test_dates_are_turned_into_iso(printed, iso):
+    assert extract.to_iso_date(printed) == iso
+
+
+def test_a_date_that_is_not_a_real_date_is_left_alone_so_it_still_shows():
+    assert extract.to_iso_date("05/20/2026") == "05/20/2026"  # month 20 does not exist
+    assert extract.to_iso_date(None) is None and extract.to_iso_date("soon") == "soon"
+
+
+def test_extracted_dates_are_normalised_and_then_confirmed_against_the_text():
+    invoice = Invoice.model_validate({"invoice_number": "F-1", "invoice_date": "01 Nov 2026",
+                                      "due_date": "01-12-2026", "supplier": {"name": "Acme B.V."}})
+    extract.normalise_dates(invoice)
+    assert (invoice.invoice_date, invoice.due_date) == ("2026-11-01", "2026-12-01")
+    assert extract.find_low_confidence_fields(invoice, "F-1 dated 01 Nov 2026, due 01-12-2026. Acme B.V.") == []
+
+
+def test_an_address_split_over_lines_is_not_doubtful():
+    invoice = Invoice.model_validate({"invoice_number": "F-1", "supplier": {
+        "name": "Acme B.V.", "address": "Kiandreef 181, 4001 OG Arnemuiden"}})
+    text = "Acme B.V." + chr(10) + "Kiandreef 181" + chr(10) + "4001 OG Arnemuiden" + chr(10) + "Invoice F-1"
+    assert extract.find_low_confidence_fields(invoice, text) == []
+
+
+def test_a_date_that_is_not_on_the_page_is_still_flagged():
+    invoice = Invoice.model_validate({"invoice_number": "F-1", "invoice_date": "2026-10-28",
+                                      "supplier": {"name": "Acme B.V."}})
+    assert extract.find_low_confidence_fields(invoice, "Invoice F-1 dated 27/10/2026. Acme B.V.") == ["invoice_date"]
+
+
 def test_invoice_model_accepts_printed_amounts():
     invoice = Invoice.model_validate({"total_incl_vat": "EUR 1,234.56", "lines": [{"vat_rate": "21%", "quantity": 2}]})
     assert invoice.total_incl_vat == Decimal("1234.56")

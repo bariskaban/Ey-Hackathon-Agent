@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ui.theme import (CHECK_STATES, ERROR_LABELS, SEVERITIES, VERDICTS, esc, eur, fmt_date, key)
+from ui.theme import CHECK_STATES, ERROR_LABELS, SEVERITIES, VERDICTS, esc, eur, fmt_date, key
 
 
 def verdict_badge(verdict: Any) -> str:

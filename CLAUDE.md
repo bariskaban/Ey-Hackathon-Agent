@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Guidance for working in this repository. See [README.md](README.md) for setup, [idea.md](idea.md) for the design and [todo.md](todo.md) for the task split.
+Guidance for working in this repository. See [README.md](README.md) for setup, how Vera works and the project layout.
 
 ## Git workflow
 

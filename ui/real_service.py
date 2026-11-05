@@ -1,8 +1,7 @@
 """The real backend, presented in the shape the UI pages read.
 
-`ui/services.py` picks this module when INVOICE_SERVICE=real. It has the same functions as
-`ui/mock_service.py`, but every answer comes from `agent/service.py`. The pages were built against the
-mock's flat, attribute-style objects, so this file converts the backend's Pydantic models into that shape.
+`ui/services.py` hands this module to the pages. Every answer comes from `agent/service.py`. The pages read
+flat, attribute-style objects, so this file converts the backend's Pydantic models into that shape.
 It only reads and renames; no verification logic lives here, and the backend's contract stays untouched.
 
 The conversions in one place:
@@ -58,7 +57,7 @@ _running: set[str] = set()
 
 
 def _ns(x: Any) -> Any:
-    """Nested dicts become objects with attribute access, like the mock's."""
+    """Nested dicts become objects with attribute access, so the pages can read them as attributes."""
     if isinstance(x, dict):
         # Tool-call `args` stay one level deep: the pages json.dumps each value, so values must stay plain JSON.
         return SimpleNamespace(**{k: SimpleNamespace(**v) if k == "args" and isinstance(v, dict) else _ns(v)

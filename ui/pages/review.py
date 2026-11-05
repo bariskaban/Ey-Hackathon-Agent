@@ -5,7 +5,18 @@ from nicegui import ui
 
 from ui.components.widgets import error_label, evidence_table, page_header, severity_tag, stamp
 from ui.services import open_case_count, svc
-from ui.theme import CASE_STATUS_LABELS, ERROR_LABELS, SEVERITIES, esc, eur, fmt_date, fmt_time, html, key, shell
+from ui.theme import (
+    CASE_STATUS_LABELS,
+    ERROR_LABELS,
+    SEVERITIES,
+    esc,
+    eur,
+    fmt_date,
+    fmt_time,
+    html,
+    key,
+    shell,
+)
 
 
 @ui.page("/review")
@@ -129,7 +140,7 @@ async def _case_detail(case_id: str) -> None:
                         return
                     try:
                         await svc.set_case_status(case_id, choice.value, reviewer.value.strip(), reason.value)
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
                         ui.notify(f"The decision was not saved: {exc}. Check the form and try again.", type="negative")
                         return
                     ui.notify("Decision recorded.", type="positive")
@@ -167,7 +178,7 @@ async def _case_detail(case_id: str) -> None:
             async def export(fmt: str) -> None:
                 try:
                     path = await svc.export_evidence_pack(case_id, fmt)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
                     ui.notify(f"The evidence pack was not created: {exc}. Try again.", type="negative")
                     return
                 ui.download.file(path, path.name)

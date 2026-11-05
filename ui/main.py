@@ -1,11 +1,14 @@
-"""Vera UI entry point.
+"""Vera: the web interface.
 
 Run from the repo root:
-    uv run python -m ui.main                       # mock data (default)
-    INVOICE_SERVICE=real uv run python -m ui.main  # the real agent
+    python -m ui.main          # then open http://localhost:8080
+    vera                       # the same, after `pip install -e .`
 
-Then open http://localhost:8080
-Optional: MOCK_SPEED=2 runs the mock verification twice as fast.
+Settings (environment variables):
+    PORT=8080                  port to listen on
+    HOST=127.0.0.1             address to listen on; the default keeps Vera reachable from this machine only
+    UI_RELOAD=0                set to 1 while developing, to restart on file changes
+    UI_STORAGE_SECRET=...      signs the browser session cookie; set your own value if others can reach the port
 """
 from __future__ import annotations
 
@@ -18,37 +21,36 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from nicegui import app, ui
 
+from agent import service
 from ui import theme
 
 # Importing the page modules registers their routes (@ui.page).
 from ui.pages import audit, demo, evals, inbox, review, verdict, verify  # noqa: F401
-from ui.services import MODE
 
 theme.setup()
 
-if MODE == "real":
-    from agent import service
 
-    async def _start_backend() -> None:
-        """Start the MCP servers now, so the first page already sees them as up."""
-        await service._runtime.get()
+async def _start_backend() -> None:
+    """Start the MCP servers now, so the first page already sees them as up."""
+    await service._runtime.get()
 
-    app.on_startup(_start_backend)
-    app.on_shutdown(service.close)
+
+app.on_startup(_start_backend)
+app.on_shutdown(service.close)
 
 
 def main() -> None:
     ui.run(
         title="Vera",
         favicon=str(Path(__file__).resolve().parent / "static" / "favicon.svg"),
+        host=os.getenv("HOST", "127.0.0.1"),
         port=int(os.getenv("PORT", "8080")),
-        reload=os.getenv("UI_RELOAD", "1") == "1",
+        reload=os.getenv("UI_RELOAD", "0") == "1",
         show=False,
-        storage_secret=os.getenv("UI_STORAGE_SECRET", "vera-local-demo"),
-        show_welcome_message=True,
+        storage_secret=os.getenv("UI_STORAGE_SECRET", "vera-local"),
+        show_welcome_message=False,
     )
 
 
 if __name__ in {"__main__", "__mp_main__"}:
-    print(f"Vera UI using the {MODE} service")
     main()

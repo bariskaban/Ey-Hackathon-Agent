@@ -215,7 +215,7 @@ def _pdf_pages(path: Path, max_pages: int = 3) -> list[str]:
             pdf[i].render(scale=1.4).to_pil().save(buf, format="PNG")
             out.append("data:image/png;base64," + base64.b64encode(buf.getvalue()).decode())
         pdf.close()
-    except Exception:
+    except Exception:  # noqa: BLE001 - reported to the user, never a crash
         return []
     return out
 
@@ -278,7 +278,7 @@ def _highlight_legend(path: Path, v: Any, boxes: list[highlights.Box]) -> None:
 
 
 def _flag_html(v: Any, flag: Any) -> str:
-    """One risk flag. Mock flags are error codes; the real agent writes short sentences, which must wrap.
+    """One risk flag. The agent writes short sentences, which must wrap.
 
     A sentence the model added ("(model) ...") is advice, not a finding, so it is shown as an AI note
     in the "needs review" blue instead of with a severity it was never given.
@@ -308,7 +308,7 @@ def _severity_of(v: Any, flag: Any) -> str:
 
 
 def _invoice_sheet(inv: Any, v: Any, failed: set[str]) -> str:
-    """Draw the invoice from its extracted fields (the mock has no original files)."""
+    """Draw the invoice from its extracted fields (used when the original file cannot be shown)."""
     vat_failed = any(key(d.type) in ("REVERSE_CHARGE_ERROR", "WRONG_VAT_RATE", "VAT_ARITHMETIC_ERROR")
                      for d in v.discrepancies or [])
     iban_failed = any(key(d.type) == "CHANGED_BANK_DETAILS" for d in v.discrepancies or [])

@@ -63,9 +63,7 @@ async def eval_page() -> None:
                      "Changed: " + ", ".join(flips) if flips else "No verdict changed between runs"),
                     ("Average time per invoice", s["avg_s"], " s", f"{esc(latest.model)}, {s['avg_calls']} tool calls each"),
                 ]
-                sample = ('<p style="margin:0;font-weight:700;color:#1D4ED8">! Sample numbers from the mock service, '
-                          'not a real run.</p>' if getattr(latest, "sample", False) else "")
-                html(sample + '<section aria-label="Headline results" class="vr-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">'
+                html('<section aria-label="Headline results" class="vr-grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">'
                      + "".join(f'<div class="vr-card" style="padding:18px 20px;display:flex;flex-direction:column;gap:4px">'
                                f'<span style="font-size:14px;color:var(--vr-body2)">{label}</span>'
                                f'<span style="font-family:var(--vr-display);font-size:42px;font-weight:600;line-height:1.1">{big}'
@@ -121,7 +119,7 @@ async def eval_page() -> None:
                         f'<span class="vr-small">{esc(p.message)}</span></div>')
                 ui.notify("Eval finished.", type="positive")
                 await draw()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
                 ui.notify(f"The eval stopped: {exc}", type="negative")
             finally:
                 state["running"] = False

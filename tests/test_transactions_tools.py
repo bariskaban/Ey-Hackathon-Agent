@@ -87,6 +87,22 @@ def test_invoice_number_ocr_lookalike(case):
     assert result["matches"] and result["matches"][0]["invoice_no"] == original
 
 
+def test_a_misread_digit_counts_only_with_the_same_amount_and_close_dates(case):
+    invoice = case("duplicate")["expected_invoice"]
+    vendor_id = vendor_id_of(invoice)
+    original = tools.lookup_invoice_number(vendor_id, invoice["invoice_number"])["matches"][0]
+    number = original["invoice_no"]
+    misread = number[:-2] + ("7" if number[-2] != "7" else "1") + number[-1]  # a digit a scan could misread
+    assert tools.lookup_invoice_number(vendor_id, misread)["count"] == 0  # the number alone is not enough
+    day = original["date"]
+    same = tools.lookup_invoice_number(vendor_id, misread, amount=original["amount"], invoice_date=day)
+    assert same["matches"] and same["matches"][0]["match_type"] == "similar_number_same_amount"
+    other_amount = tools.lookup_invoice_number(vendor_id, misread, amount=original["amount"] + 5, invoice_date=day)
+    assert other_amount["count"] == 0  # a different amount is a different invoice
+    next_month = tools.lookup_invoice_number(vendor_id, misread, amount=original["amount"], invoice_date="2030-01-01")
+    assert next_month["count"] == 0  # a recurring monthly bill is not a duplicate
+
+
 def test_sequential_invoice_numbers_are_not_flagged_as_duplicates(case):
     invoice = case("clean_standard")["expected_invoice"]
     vendor_id = vendor_id_of(invoice)
