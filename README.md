@@ -76,6 +76,22 @@ python data/render_pdfs.py
 - `generate.py` writes `data/db.sqlite` (vendors, purchase orders, receipts, about 2,000 past transactions and reference data), plus `data/invoices/ground_truth.json` and the invoice specs.
 - `render_pdfs.py` renders the 20 invoices as PDFs in `data/invoices/`. Five of them are "scanned" (image only, slightly rotated and noisy) to test OCR.
 
+### 7. Run the tests
+
+```bash
+python -m pytest
+```
+
+The tests generate their own temporary dataset, so they never touch `data/db.sqlite`.
+
+### Optional: inspect the MCP servers
+
+```bash
+python scripts/start_servers.py
+```
+
+This starts every server that exists over HTTP (the transactions server is at `http://127.0.0.1:8102/mcp`). Connect to it with the MCP Inspector (`npx @modelcontextprotocol/inspector`, transport "Streamable HTTP"). The agent does not need this; it starts the servers itself.
+
 ## Project files
 
 | File | Purpose |
