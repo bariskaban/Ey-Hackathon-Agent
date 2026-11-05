@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Project data (generated locally, may contain sensitive or large files)
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/inbox/
+data/runs/
+data/outbox/
+data/cache/
+*.log
+
+# NiceGUI
+.nicegui/

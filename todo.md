@@ -2,7 +2,7 @@
 
 See [idea.md](idea.md) for the full design. This file splits the work between the two of us.
 
-**Scope:** 6 MCP servers, Dutch VAT rules, 20 test invoices.
+**Scope:** 6 MCP servers, Dutch VAT rules, 20 test invoices. **Everything is in English:** invoices, prompts, tool outputs and the UI.
 
 | Tag | Owner | Owns these folders |
 |---|---|---|
@@ -21,10 +21,9 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 - [ ] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, runs, `.venv`), and `README.md` with run instructions
 - [ ] Python 3.11+, use `uv` for the environment, one shared `pyproject.toml`
 - [ ] Install Ollama and pull the models: `qwen3:8b` (later `gpt-oss:20b` and the Qwen3 30B-A3B model for comparison; check the exact tags in the Ollama library)
-- [ ] Install Tesseract with the **Dutch (`nld`) and English** language packs, and Node (only needed for `npx @modelcontextprotocol/inspector`)
+- [ ] Install Tesseract (English language pack only), and Node (only needed for `npx @modelcontextprotocol/inspector`)
 - [ ] **Agree the contract (section 1) together**, about an hour. TECH writes `schemas.py`; UI reviews field names and what each screen needs.
 - [ ] Agree the verdict names, the 14 error-type names and the severity colours (they show up everywhere in the UI)
-- [ ] Decide the UI language: English labels, with Dutch invoice content shown as is
 - [ ] Git workflow: short feature branches → PR → merge to `main`, and keep `main` runnable
 
 ---
@@ -79,10 +78,10 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 ### Phase 1: Data
 - [ ] DB schema (SQLite): vendors (with country, VAT number, KvK number, IBAN), POs, PO lines (with VAT category), goods receipts, transactions, invoices seen, employees
 - [ ] Reference tables: VAT rates with validity dates (21 / 9 / 0), EU countries, bank codes (INGB, RABO, ABNA…), sanctions (EU consolidated list sample), review cases
-- [ ] `data/generate.py`: about 30 vendors (mostly Dutch, a few Belgian and German), about 2,000 past transactions over two years, Faker `nl_NL`
+- [ ] `data/generate.py`: about 30 vendors (mostly Dutch, a few Belgian and German), about 2,000 past transactions over two years. All text in English; Faker `nl_NL` only for company names and addresses
 - [ ] Valid VAT numbers and IBANs for clean vendors (generate them so they pass `python-stdnum`)
 - [ ] **The 20 test invoices:** 6 clean + 14 with one planted error each (idea.md §4), plus `ground_truth.json`
-- [ ] Mix of Dutch and English invoice wording
+- [ ] All invoice wording in English ("Invoice", "VAT", "Reverse charge", "Total incl. VAT")
 - [ ] `data/render_pdfs.py`: about 15 normal PDFs and about 5 "scanned" ones (rasterised, noisy, slightly rotated)
 
 ### Phase 2: Transaction server and gateway
@@ -95,10 +94,11 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 ### Phase 3: Documents and extraction
 - [ ] `servers/documents/`: inbox manifest (`doc_id` → path + SHA-256), `list_documents`, `convert_document(doc_id, pages?)`, `get_document_metadata`
-- [ ] MarkItDown conversion, OCR fallback (Dutch + English) when there's no text layer, output cap with paging, cache by file hash
+- [ ] MarkItDown conversion, OCR fallback (English) when there's no text layer, output cap with paging, cache by file hash
+- [ ] Language check (`langdetect`): return `language` from `convert_document`; anything not English stops early with `NEEDS_REVIEW`
 - [ ] Allowed file types, maximum size, maximum page count; raw paths and URIs are never accepted
 - [ ] `agent/extract.py`: Markdown → Ollama (`format` = Invoice JSON schema) → Pydantic; retry once on failure
-- [ ] Check field-level extraction accuracy on all 20 invoices, especially the Dutch and scanned ones
+- [ ] Check field-level extraction accuracy on all 20 invoices, especially the scanned ones
 
 ### Phase 4: Verification core and service
 - [ ] `agent/llm.py`: Ollama wrapper (`num_ctx` 8k–16k, `temperature` 0, tools, `format`)
@@ -142,7 +142,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [ ] App shell: left nav, header with a **"Runs 100% locally"** badge and a system status chip (Ollama up, model name, servers up, from `system_status()`)
 - [ ] Product name, logo and favicon
 - [ ] Status is never shown by colour alone: always add an icon or label (accessibility, and readable on a projector)
-- [ ] Euro formatting throughout (`€ 1.234,56` style for Dutch invoices; agree one style)
+- [ ] Euro formatting throughout, English style (`€1,234.56`)
 
 ### U1: Mock-first setup
 - [ ] `ui/main.py` running `ui.run()` with page routing
@@ -201,7 +201,6 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [ ] Use the same wording for verdicts, error types and severities everywhere
 
 ### Stretch [UI]
-- [ ] Dutch / English UI language toggle
 - [ ] Vendor page (flags and history per vendor)
 - [ ] Architecture page with an interactive diagram of agents → gateway → 6 servers
 
@@ -214,7 +213,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [ ] [BOTH] Demo script rehearsal (idea.md §10), at least twice, timed
 - [ ] [TECH] Record replay files for every demo scenario
 - [ ] [UI] Record a backup screen video of the full demo
-- [ ] [BOTH] Prepare answers: "What can the AI see?", "Why local?", "How does this scale beyond 20 invoices and to SAP or Exact?", "What about prompt injection?", "What about other EU countries' VAT?"
+- [ ] [BOTH] Prepare answers: "What can the AI see?", "Why local?", "How does this scale beyond 20 invoices and to SAP or Exact?", "What about prompt injection?", "What about other EU countries' VAT?", "What about invoices in Dutch?"
 
 ---
 

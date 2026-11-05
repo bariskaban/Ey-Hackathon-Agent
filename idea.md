@@ -1,6 +1,6 @@
 # Invoice Verification Agent (local, MCP-gated)
 
-An AI agent that receives an invoice and checks it against a company's transaction records and **Dutch VAT (BTW) rules**. The records sit behind **MCP servers**, so the agent never sees the full database. It can only call a small set of narrow, read-only tools that hide sensitive fields and log every call.
+An AI agent that receives an invoice and checks it against a company's transaction records and **Dutch VAT rules**. **Everything is in English:** invoices, prompts, tool outputs and the UI. The records sit behind **MCP servers**, so the agent never sees the full database. It can only call a small set of narrow, read-only tools that hide sensitive fields and log every call.
 
 The whole thing runs **locally** on a machine with 8GB VRAM and 32GB RAM. No cloud model is used, so client financial data never leaves the machine.
 
@@ -8,7 +8,7 @@ The whole thing runs **locally** on a machine with 8GB VRAM and 32GB RAM. No clo
 
 ## 1. Goals
 
-- **Input:** an invoice as a PDF or image, in Dutch or English.
+- **Input:** an invoice in English, as a PDF or image. Invoices in any other language go to `NEEDS_REVIEW` with the reason "unsupported language".
 - **Output:** a verdict with evidence:
   - `MATCHED` / `PARTIAL_MATCH` / `MISMATCH` / `NOT_FOUND` / `NEEDS_REVIEW`
   - a list of discrepancies
@@ -63,17 +63,18 @@ Small local models (~8B) are unreliable at long, open-ended tool use. So:
 |---|---|
 | Language | Python 3.11+ |
 | LLM runtime | **Ollama** (OpenAI-compatible API, tool calling, JSON-schema `format`) |
-| Agent model | **Qwen3 8B, 4-bit (Q4_K_M)** (~5GB, runs entirely on the GPU; reads Dutch well) |
+| Agent model | **Qwen3 8B, 4-bit (Q4_K_M)** (~5GB, runs entirely on the GPU) |
 | Stronger, slower option | **gpt-oss-20b** or **Qwen3-30B-A3B** (MoE models, partly in system RAM) |
 | Document → Markdown | **Microsoft MarkItDown** (`markitdown[pdf,docx,xlsx]`), wrapped in our own MCP server |
-| OCR fallback | `pytesseract` (with the Dutch language pack) or PaddleOCR |
+| OCR fallback | `pytesseract` (English language pack only) or PaddleOCR |
+| Language check | `langdetect`: anything that isn't English is sent to review |
 | MCP | `mcp` Python SDK (FastMCP servers + stdio clients); 6 servers behind one gateway |
 | VAT numbers and IBANs | **`python-stdnum`** (`stdnum.nl.btw`, `stdnum.eu.vat`, `stdnum.iban`): offline format and checksum checks |
 | Fuzzy matching | `rapidfuzz` (sanctions screening, duplicate invoice numbers) |
 | Dutch holidays | `holidays` package (country `NL`, offline) |
 | DB | SQLite |
 | Validation | Pydantic |
-| Synthetic data | Faker (`nl_NL` locale) + a custom generator, `reportlab` for invoice PDFs |
+| Synthetic data | Faker + a custom generator, `reportlab` for invoice PDFs. All text is English; the `nl_NL` locale is used only for company names, street addresses and cities. |
 | Reports | `reportlab` (PDF), `openpyxl` (XLSX) |
 | UI | **NiceGUI**: pure Python, runs on FastAPI, pushes live updates over websockets. It has built-in upload, AG Grid tables and ECharts charts, and needs no Node build step. |
 | Dev tools | MCP Inspector (`npx @modelcontextprotocol/inspector`) |
@@ -111,7 +112,7 @@ review_cases(case_id, invoice_id, verdict, evidence_json, created_at, status)   
 - About **30 vendors**: mostly Dutch, plus a few from Belgium and Germany to test reverse charge.
 - About **2,000 past transactions** over two years. Only 20 new invoices are tested, but the history is what the duplicate checks and anomaly scores compare against.
 - All amounts are in EUR.
-- Invoices are a mix of Dutch ("Factuur", "BTW", "Totaal incl. BTW") and English.
+- **All invoices are in English** ("Invoice", "VAT", "Total incl. VAT"), even for Dutch suppliers. Company names and addresses can still be Dutch, because they are names, not language.
 
 ### The 20 test invoices
 
@@ -126,7 +127,7 @@ review_cases(case_id, invoice_id, verdict, evidence_json, created_at, status)   
 | 5 | Unknown vendor | Vendor name or VAT number not in the vendor master |
 | 6 | VAT arithmetic error | VAT per rate, or the total including VAT, doesn't add up |
 | 7 | Wrong VAT rate | 21% charged on goods that are 9% (such as food), or the other way round |
-| 8 | Reverse charge error | A German supplier charges 21% Dutch VAT on a business-to-business supply instead of reverse charge, or "BTW verlegd" is shown without the buyer's VAT number |
+| 8 | Reverse charge error | A German supplier charges 21% Dutch VAT on a business-to-business supply instead of reverse charge, or "Reverse charge" is shown without the buyer's VAT number |
 | 9 | Invalid VAT number | The supplier's VAT number fails the format or checksum check |
 | 10 | Missing mandatory fields | No KvK number, no supply date, or no VAT amount per rate |
 | 11 | Changed bank details | IBAN on the invoice differs from the vendor master |
@@ -155,11 +156,12 @@ Turns invoice files into Markdown that the model can read.
 | Tool | Returns |
 |---|---|
 | `list_documents()` | Pending docs: `doc_id`, filename, type, size, page count |
-| `convert_document(doc_id, pages?)` | `{markdown, method: "markitdown" \| "ocr", char_count, truncated, warnings[]}` |
+| `convert_document(doc_id, pages?)` | `{markdown, method: "markitdown" \| "ocr", language, char_count, truncated, warnings[]}` |
 | `get_document_metadata(doc_id)` | SHA-256 hash, MIME type, pages, whether a text layer exists |
 
 - **Only accepts `doc_id`s from the inbox, never raw paths or URLs.** Microsoft's own `markitdown-mcp` takes any `file:` or `http:` URI, which would let the model read any file on the machine. So we wrap the `markitdown` library ourselves.
-- Text PDFs → MarkItDown. Scans and images → OCR with Tesseract's Dutch and English language packs (`method: "ocr"`).
+- Text PDFs → MarkItDown. Scans and images → OCR with Tesseract's English language pack (`method: "ocr"`).
+- `convert_document` also returns the detected `language`. Anything other than English stops the run early with `NEEDS_REVIEW`.
 - Output is capped at about 6–8k characters per call, with paging.
 - Results are cached by file hash.
 - The Markdown is untrusted data. The host wraps it in `<document>` delimiters before it reaches the LLM.
@@ -185,7 +187,7 @@ Fixed rules only. No model judgement.
 |---|---|
 | `validate_vat_number(vat_number)` | Dutch VAT numbers (`NL` + 9 digits + `B` + 2 digits), checked with `stdnum.nl.btw`, which covers both the old 11-test and the mod-97 check used for sole-trader VAT IDs since 2020. Other EU numbers get a format and checksum check with `stdnum.eu.vat`. |
 | `get_vat_rate(category, date)` | 21% standard, 9% reduced (food, books, medicines…), 0%. Rates live in a table with validity dates, because rates and categories change; check Belastingdienst for current changes. |
-| `expected_vat_treatment(supplier_country, buyer_country, buyer_vat_number, supply_type)` | Domestic sale → Dutch VAT charged. Business-to-business supply from another EU country → reverse charge: 0% on the invoice, the text "btw verlegd" or "reverse charge", and both VAT numbers shown. |
+| `expected_vat_treatment(supplier_country, buyer_country, buyer_vat_number, supply_type)` | Domestic sale → Dutch VAT charged. Business-to-business supply from another EU country → reverse charge: 0% on the invoice, the text "Reverse charge", and both VAT numbers shown. |
 | `check_invoice_requirements(invoice_json)` | Belastingdienst's mandatory invoice fields: supplier VAT number, buyer VAT number when reverse charge applies, invoice date, unique sequential number, names and addresses, quantity and description, supply date, amount excluding VAT per rate, VAT rate and VAT amount. Also the KvK number, which the Trade Register rules require on invoices. |
 | `validate_invoice_math(invoice_json)` | Line totals, VAT per rate, total including VAT, rounding |
 
@@ -376,7 +378,7 @@ Twenty invoices are too few for meaningful percentages per error type, so report
 
 ## 10. Demo script
 
-1. Upload a **clean Dutch invoice** → `MATCHED`, citing the matching PO and payment.
+1. Upload a **clean invoice from a Dutch supplier** → `MATCHED`, citing the matching PO and payment.
 2. Upload a **duplicate invoice with a changed IBAN** → flagged as high-risk fraud, with evidence.
 3. Upload an invoice from a **German supplier charging 21% Dutch VAT** → the tax rules say it should have been reverse charged.
 4. Upload an invoice with **food charged at 21%** instead of 9% → wrong VAT rate.
@@ -412,6 +414,7 @@ Twenty invoices are too few for meaningful percentages per error type, so report
 7. **Connecting to client systems.** One MCP server in front of each source (SAP, Oracle, Exact Online, AFAS, bank feeds). The agent stays the same and only the connectors change.
 8. **Human review.** A reviewer queue sorted by risk, overrides with a reason, and overrides fed back into the rules and the test set.
 9. **Other document types.** Expense claims and receipts, credit notes, bank reconciliations, intercompany reconciliations.
+10. **Other languages.** Dutch, German and French invoices, with OCR language packs and a test set for each language.
 
 ---
 
@@ -421,7 +424,7 @@ Twenty invoices are too few for meaningful percentages per error type, so report
 |---|---|
 | Small model makes bad tool calls | Guided agent, few flat tools, step limit, schema-constrained output, retry |
 | Extraction errors cascade | Validate with Pydantic; low-confidence fields → `NEEDS_REVIEW` |
-| Dutch-language invoices extract badly | Test Dutch and English invoices separately; use the Dutch OCR language pack |
+| A non-English invoice arrives | Language check in the documents server; stop early with `NEEDS_REVIEW` ("unsupported language") |
 | Context window too small | Set `num_ctx` explicitly; return compact tool results |
 | Prompt injection via invoice | Wrap invoice text as data, no write tools for the verifier, verdicts backed by fixed checks |
 | Document tool reads arbitrary files or URLs | Accept inbox `doc_id`s only, never raw paths or URIs |
