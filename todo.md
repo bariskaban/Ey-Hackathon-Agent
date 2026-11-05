@@ -2,6 +2,8 @@
 
 See [idea.md](idea.md) for the full design. This file splits the work between the two of us.
 
+**Scope:** 6 MCP servers, Dutch VAT rules, 20 test invoices.
+
 | Tag | Owner | Owns these folders |
 |---|---|---|
 | **[TECH]** | Technical layer: data, MCP servers, gateway, agent, eval | `data/`, `servers/`, `agent/`, `eval/`, `scripts/` |
@@ -16,12 +18,13 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 
 ## 0. Kickoff [BOTH]
 
-- [ ] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, `.venv`), and `README.md` with run instructions
+- [ ] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, runs, `.venv`), and `README.md` with run instructions
 - [ ] Python 3.11+, use `uv` for the environment, one shared `pyproject.toml`
-- [ ] Install Ollama and pull the models: `qwen3:8b`, `nomic-embed-text` (later `gpt-oss:20b` and the Qwen3 30B-A3B model; check the exact tags in the Ollama library)
-- [ ] Install Tesseract (Windows installer) and Node (only needed for `npx @modelcontextprotocol/inspector`)
+- [ ] Install Ollama and pull the models: `qwen3:8b` (later `gpt-oss:20b` and the Qwen3 30B-A3B model for comparison; check the exact tags in the Ollama library)
+- [ ] Install Tesseract with the **Dutch (`nld`) and English** language packs, and Node (only needed for `npx @modelcontextprotocol/inspector`)
 - [ ] **Agree the contract (section 1) together**, about an hour. TECH writes `schemas.py`; UI reviews field names and what each screen needs.
-- [ ] Agree the verdict names, error-type names and severity colours (they show up everywhere in the UI)
+- [ ] Agree the verdict names, the 14 error-type names and the severity colours (they show up everywhere in the UI)
+- [ ] Decide the UI language: English labels, with Dutch invoice content shown as is
 - [ ] Git workflow: short feature branches → PR → merge to `main`, and keep `main` runnable
 
 ---
@@ -38,7 +41,6 @@ async def upload_document(filename: str, data: bytes) -> DocumentInfo
 def get_document_file(doc_id: str) -> Path                  # for the PDF/image preview
 async def verify(doc_id: str) -> AsyncIterator[Event]        # streams events; the last one is the verdict
 async def get_verdict(doc_id: str) -> Verdict | None
-async def answer_elicitation(request_id: str, answer: str) -> None
 
 async def list_cases(status: str | None = None) -> list[ReviewCase]
 async def get_case(case_id: str) -> ReviewCase
@@ -47,7 +49,7 @@ async def export_evidence_pack(case_id: str, fmt: str = "pdf") -> Path
 
 async def get_audit_log(doc_id: str | None = None, role: str | None = None,
                         server: str | None = None) -> list[AuditEntry]
-async def run_eval(model: str) -> AsyncIterator[EvalProgress]
+async def run_eval(model: str, runs_per_invoice: int = 3) -> AsyncIterator[EvalProgress]
 async def list_eval_runs() -> list[EvalReport]
 async def system_status() -> SystemStatus                    # Ollama up? which model? servers running?
 ```
@@ -62,94 +64,85 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 | `check_result` | `name`, `server`, `status` (pass / fail / skipped), `detail`, `severity` | Live checklist |
 | `tool_call` | `role`, `server`, `tool`, `args`, `rows_returned`, `latency_ms`, `refused` | Live audit feed |
 | `llm_note` | `role`, `text` (short summary of the reasoning) | Agent reasoning panel |
-| `elicitation` | `request_id`, `question`, `options[]` | Dialog asking the human |
 | `verdict` | `verdict` (the full `Verdict`) | Verdict page |
 | `error` | `message`, `stage` | Error state |
 
-- [ ] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice`, `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus`
+- [ ] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus`
 - [ ] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError`
-- [ ] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed bank account, tampered QR, prompt injection), then replace them with real recordings later
+- [ ] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later
 - [ ] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
 
 ---
 
 ## 2. TECH: technical layer
 
-### Phase 1: Data and ground truth
-- [ ] DB schema (SQLite): vendors, POs, PO lines, goods receipts, transactions, invoices seen, employees
-- [ ] Reference tables: HSN rates, state codes, sanctions, IFSC, FX rates, holidays, contracts, bank statement lines, review cases
-- [ ] `data/generate.py`: Faker vendors, POs and transactions that make sense together
-- [ ] Plant all 20 error types (idea.md §4) with ground-truth labels, about 300 invoices, 8–10 examples of each type
-- [ ] `data/render_pdfs.py`: invoice PDFs (reportlab), some of them "scanned" (rasterised, noisy, slightly rotated)
-- [ ] Signed e-invoice QR codes, made with our own test key; include valid and tampered examples
-- [ ] Synthetic MT940 / CAMT.053 bank statements
-- [ ] Synthetic contracts and an AP policy document (Markdown/PDF) for the contracts server
+### Phase 1: Data
+- [ ] DB schema (SQLite): vendors (with country, VAT number, KvK number, IBAN), POs, PO lines (with VAT category), goods receipts, transactions, invoices seen, employees
+- [ ] Reference tables: VAT rates with validity dates (21 / 9 / 0), EU countries, bank codes (INGB, RABO, ABNA…), sanctions (EU consolidated list sample), review cases
+- [ ] `data/generate.py`: about 30 vendors (mostly Dutch, a few Belgian and German), about 2,000 past transactions over two years, Faker `nl_NL`
+- [ ] Valid VAT numbers and IBANs for clean vendors (generate them so they pass `python-stdnum`)
+- [ ] **The 20 test invoices:** 6 clean + 14 with one planted error each (idea.md §4), plus `ground_truth.json`
+- [ ] Mix of Dutch and English invoice wording
+- [ ] `data/render_pdfs.py`: about 15 normal PDFs and about 5 "scanned" ones (rasterised, noisy, slightly rotated)
 
 ### Phase 2: Transaction server and gateway
 - [ ] `servers/common/`: masking, row caps, pagination, audit-log writer (JSONL)
-- [ ] `servers/transactions/`: `get_vendor`, `lookup_invoice_number` (fuzzy), `find_transactions`, `get_purchase_order`, `vendor_payment_summary`, `validate_invoice_math`
+- [ ] `servers/transactions/`: `get_vendor`, `lookup_invoice_number` (fuzzy), `find_transactions`, `get_purchase_order`, `vendor_payment_summary`
 - [ ] Read-only DB connection, parameterized queries only
 - [ ] `agent/gateway.py`: allowlist per role, query budget per invoice, routing, audit entry for every call
-- [ ] `scripts/start_servers.py`: start all servers
+- [ ] `scripts/start_servers.py`: start all 6 servers
 - [ ] Test every tool in MCP Inspector
 
-### Phase 3: Document server and extraction
+### Phase 3: Documents and extraction
 - [ ] `servers/documents/`: inbox manifest (`doc_id` → path + SHA-256), `list_documents`, `convert_document(doc_id, pages?)`, `get_document_metadata`
-- [ ] MarkItDown conversion, OCR fallback when there's no text layer, output cap with paging, cache by file hash
+- [ ] MarkItDown conversion, OCR fallback (Dutch + English) when there's no text layer, output cap with paging, cache by file hash
 - [ ] Allowed file types, maximum size, maximum page count; raw paths and URIs are never accepted
 - [ ] `agent/extract.py`: Markdown → Ollama (`format` = Invoice JSON schema) → Pydantic; retry once on failure
-- [ ] Measure field-level extraction accuracy; compare MarkItDown with pdfplumber on line-item tables
+- [ ] Check field-level extraction accuracy on all 20 invoices, especially the Dutch and scanned ones
 
 ### Phase 4: Verification core and service
 - [ ] `agent/llm.py`: Ollama wrapper (`num_ctx` 8k–16k, `temperature` 0, tools, `format`)
 - [ ] `agent/loop.py`: MCP ↔ Ollama tool loop, step limit about 8, invoice text wrapped as untrusted data
-- [ ] `agent/checks.py`: fixed checks (vendor, duplicate, PO match, arithmetic)
+- [ ] `agent/checks.py`: fixed checks (vendor, duplicate, already paid, PO and receipt match)
 - [ ] `agent/service.py`: real implementation of `verify()` emitting every event type in section 1
 - [ ] Record each run's events to `data/runs/<doc_id>.jsonl` (powers the UI's replay mode)
 - [ ] **Milestone M2:** one invoice end to end, live in the UI
 
-### Phase 5: Top-pick servers ★
-- [ ] `tax_rules`: `validate_gstin` (check digit, state code), `get_gst_rate`, `expected_tax_split`
-- [ ] `anomaly_stats`: `vendor_amount_profile`, `benford_score`, `split_invoice_check`; aggregates only, minimum group size about 5
-- [ ] `einvoice_qr`: render with pypdfium2 → decode with pyzbar/OpenCV → read the JWT claims → `compare_qr_to_invoice`
+### Phase 5: Rule servers
+- [ ] `tax_rules`:
+  - [ ] `validate_vat_number` (`stdnum.nl.btw`, `stdnum.eu.vat`)
+  - [ ] `get_vat_rate(category, date)`
+  - [ ] `expected_vat_treatment`: domestic vs reverse charge between EU businesses
+  - [ ] `check_invoice_requirements`: Belastingdienst mandatory fields + KvK number
+  - [ ] `validate_invoice_math`: lines, VAT per rate, total, rounding
+- [ ] `vendor_checks`: `validate_iban`, `compare_bank_details`, `screen_sanctions` (rapidfuzz), `vendor_employee_overlap`
+- [ ] `anomaly_stats`: `vendor_amount_profile`, `split_invoice_check`, `date_flags` (`holidays` with country `NL`); aggregates only, minimum group size about 5
 - [ ] `review_cases`: `create_review_case`, `add_case_note`, `export_evidence_pack` (PDF + XLSX); append-only
 - [ ] Add their checks to `checks.py`, and emit `check_result` events for each
+- [ ] `agent/roles.py`: extractor / verifier / reporter allowlists (the verifier LLM sees 6 tools)
 
-### Phase 6: Remaining servers
-- [ ] `vendor_checks`: `screen_sanctions` (rapidfuzz), `validate_ifsc`, `vendor_employee_overlap`
-- [ ] `fx_rates`: `get_rate`, `convert`
-- [ ] `calendar`: `is_business_day`, `due_date`, `early_payment_discount`
-- [ ] `contracts`: Chroma index (nomic-embed-text), `get_contract_terms`, `search_policy`
-- [ ] `bank_statements`: `find_bank_line`
-- [ ] `fingerprints`: `similar_documents` (imagehash + MinHash)
-
-### Phase 7: Roles and more of MCP
-- [ ] `agent/roles.py`: extractor / verifier / reporter allowlists (LLM sees 8 tools or fewer)
-- [ ] MCP resources: `policy://verification-rules`, `policy://approval-matrix`, `schema://invoice`
-- [ ] MCP prompts for extraction and verification
-- [ ] Elicitation: server asks a question → `elicitation` event → `answer_elicitation()` → answer recorded in the audit log
-
-### Phase 8: Eval
-- [ ] `eval/run_eval.py`: batch run, precision and recall per error type, confusion matrix, latency, tool calls per invoice
-- [ ] `run_eval()` in the service streams `EvalProgress` for the dashboard
+### Phase 6: Eval
+- [ ] `eval/run_eval.py`: all 20 invoices × 3 runs. Per invoice: expected vs actual verdict, error caught, which check caught it, consistency across runs, seconds, tool calls
+- [ ] `run_eval()` in the service streams `EvalProgress` for the UI
 - [ ] Compare models: qwen3:8b against gpt-oss:20b and Qwen3-30B-A3B; save each run as an `EvalReport`
-- [ ] Tune prompts and checks based on the failing error types
+- [ ] Fix the prompts and checks for any invoice that fails or flips between runs
 
 ### Stretch [TECH]
-- [ ] Standalone MCP proxy gateway (fastmcp mount/proxy)
-- [ ] Injection classifier for invoice text
-- [ ] Refresh script for real sanctions, IFSC and FX data
+- [ ] MCP resources (`policy://verification-rules`, `schema://invoice`) and prompts
+- [ ] Elicitation for unclear vendor-name matches (needs a `answer_elicitation()` in the contract and an `elicitation` event)
+- [ ] Peppol / UBL XML invoices parsed directly in the documents server
 
 ---
 
 ## 3. UI: NiceGUI app
 
 ### U0: Design first
-- [ ] Wireframes for every page (Excalidraw, Figma or paper) before writing code. Pages: Inbox, Live verification, Verdict, Review queue, Audit log, Eval dashboard, Demo
+- [ ] Wireframes for every page (Excalidraw, Figma or paper) before writing code. Pages: Inbox, Live verification, Verdict, Review queue, Audit log, Eval results, Demo
 - [ ] Design tokens in `ui/theme.py`: colours (verdict and severity colours agreed in kickoff), fonts, spacing, light and dark mode
 - [ ] App shell: left nav, header with a **"Runs 100% locally"** badge and a system status chip (Ollama up, model name, servers up, from `system_status()`)
 - [ ] Product name, logo and favicon
 - [ ] Status is never shown by colour alone: always add an icon or label (accessibility, and readable on a projector)
+- [ ] Euro formatting throughout (`€ 1.234,56` style for Dutch invoices; agree one style)
 
 ### U1: Mock-first setup
 - [ ] `ui/main.py` running `ui.run()` with page routing
@@ -158,29 +151,29 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 ### U2: Inbox
 - [ ] Drag-and-drop upload (`ui.upload`), multiple files at once, file type and size checks with friendly errors
-- [ ] Document table (AG Grid): file name, vendor, amount, date, status chip, verdict badge, risk score
-- [ ] Filters (verdict, status, vendor) and search
-- [ ] "Verify" on a row, and "Verify selected" for a small batch
+- [ ] Document table (AG Grid): file name, vendor, amount, date, status chip, verdict badge, risk flags
+- [ ] Filters (verdict, status) and search
+- [ ] "Verify" on a row, and "Verify all" (only 20 invoices, so a full run is realistic)
 
 ### U3: Live verification view (the main demo screen)
 - [ ] Stage stepper: Read document → Extract → Checks → Agent → Verdict → Report
-- [ ] Live checklist that fills in from `check_result` events, grouped by server (tax, vendor, anomaly, QR…), each check showing pass/fail/skipped and its detail
+- [ ] Live checklist that fills in from `check_result` events, grouped by server (transactions, Dutch VAT, vendor checks, anomalies), each check showing pass/fail/skipped and its detail
 - [ ] Live audit feed from `tool_call` events: role colour, server, tool, rows returned, latency; refused calls highlighted
 - [ ] Agent reasoning panel (`llm_note` events)
-- [ ] Elicitation dialog: question, options, free-text answer → `answer_elicitation()`
 - [ ] Elapsed timer, cancel button, error state with a retry button
 
 ### U4: Verdict page
 - [ ] Split view: invoice preview on the left (PDF pages rendered to images), extracted fields on the right; low-confidence fields marked
 - [ ] Big verdict badge, confidence meter, risk flags
 - [ ] Discrepancy table: field / expected / found / severity
+- [ ] **VAT panel:** VAT per rate (expected vs found), reverse charge yes/no and whether the invoice shows it correctly, VAT number validity, missing mandatory fields
+- [ ] Bank panel: IBAN matches the vendor master or not (last 4 digits only), sanctions screening result
 - [ ] Evidence transactions table (masked values, exactly as the agent saw them)
-- [ ] QR comparison panel: QR value next to printed value, mismatches highlighted
 - [ ] "Open review case" button
 - [ ] Stretch: highlight the mismatched fields directly on the invoice image
 
 ### U5: Review queue
-- [ ] Case list sorted by risk, with filters by status and error type
+- [ ] Case list sorted by severity, with filters by status and error type
 - [ ] Case detail: verdict summary, evidence, notes timeline
 - [ ] Approve / Reject / Escalate, **reason required**, which calls `set_case_status()`; this is the only place a final status is set
 - [ ] Add a note
@@ -192,16 +185,15 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [ ] Summary per role: tools allowed vs tools used, budget used
 - [ ] This page backs the "the AI never sees the full database" pitch, so make it clear
 
-### U7: Eval dashboard
+### U7: Eval results
 - [ ] Model selector + "Run eval" button + progress bar (`run_eval()` stream)
-- [ ] Headline numbers: overall accuracy, fraud recall, invoices per minute, average tool calls
-- [ ] Confusion matrix (ECharts heatmap)
-- [ ] Precision and recall per error type (bar chart)
+- [ ] Headline numbers: correct out of 20, errors caught out of 14, consistent across 3 runs, average seconds per invoice
+- [ ] **Results grid:** 20 rows (invoices) × 3 runs, each cell a pass/fail icon, with the planted error type and the check that caught it
 - [ ] Model comparison table across eval runs
-- [ ] Click into the failing invoices → verdict page
+- [ ] Click a row → verdict page for that invoice
 
 ### U8: Demo mode and polish
-- [ ] Demo page: one button per demo-script step (idea.md §9), each loading the right invoice and starting verification
+- [ ] Demo page: one button per demo-script step (idea.md §10), each loading the right invoice and starting verification
 - [ ] **Replay mode:** play back a recorded `data/runs/*.jsonl` event stream at real speed, so the demo still works if the live model is slow or fails
 - [ ] Empty, loading and error states on every page
 - [ ] Check the layout at 1366×768 and 1920×1080 (projector sizes)
@@ -209,20 +201,20 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [ ] Use the same wording for verdicts, error types and severities everywhere
 
 ### Stretch [UI]
-- [ ] Vendor risk page (risk score over time, flags per vendor)
-- [ ] Settings page (model choice, query budgets per role), shown read-only to explain the governance setup
-- [ ] Architecture page with an interactive diagram of agents → gateway → servers
+- [ ] Dutch / English UI language toggle
+- [ ] Vendor page (flags and history per vendor)
+- [ ] Architecture page with an interactive diagram of agents → gateway → 6 servers
 
 ---
 
 ## 4. Pitch and demo [BOTH]
 
 - [ ] [UI] Slide deck and architecture diagram (visuals); [TECH] supplies technical content and numbers
-- [ ] [TECH] Final eval numbers and the model comparison table
-- [ ] [BOTH] Demo script rehearsal (idea.md §9), at least twice, timed
+- [ ] [TECH] Final eval numbers (20 × 3 runs) and the model comparison table
+- [ ] [BOTH] Demo script rehearsal (idea.md §10), at least twice, timed
 - [ ] [TECH] Record replay files for every demo scenario
 - [ ] [UI] Record a backup screen video of the full demo
-- [ ] [BOTH] Prepare answers: "What can the AI see?", "Why local?", "How does this scale to SAP?", "What about prompt injection?"
+- [ ] [BOTH] Prepare answers: "What can the AI see?", "Why local?", "How does this scale beyond 20 invoices and to SAP or Exact?", "What about prompt injection?", "What about other EU countries' VAT?"
 
 ---
 
@@ -231,10 +223,10 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 | Milestone | TECH has | UI has | Check together |
 |---|---|---|---|
 | **M0: Contract** | `schemas.py`, `service.py` stub, sample event fixtures | Wireframes, theme | Field names and events cover every screen |
-| **M1: Skeletons** | Data generated; transaction server + gateway working in Inspector | All pages clickable on mock data | Mock events look like what the backend will send |
+| **M1: Skeletons** | Data and 20 invoices generated; transaction server + gateway working in Inspector | All pages clickable on mock data | Mock events look like what the backend will send |
 | **M2: First real invoice** | `verify()` working end to end for core checks | Live view + verdict page | Switch to `INVOICE_SERVICE=real`, run 1 invoice |
-| **M3: Top picks** | Tax, anomaly, QR and review-case servers | Review queue + audit log explorer | Demo steps 1–8 work live |
-| **M4: Eval** | Batch eval + model comparison | Eval dashboard + evidence-pack export | Full dataset runs; numbers show in the dashboard |
+| **M3: Rule servers** | Tax, vendor, anomaly and review-case servers | Review queue, audit log, VAT and bank panels | Demo steps 1–8 work live |
+| **M4: Eval** | 20 × 3 eval + model comparison | Eval results page + evidence-pack export | All 20 invoices run; results show in the UI |
 | **M5: Freeze** | Replay recordings, bug fixes only | Demo mode, replay, polish | Two full rehearsals, backup video recorded |
 
 ---
@@ -243,6 +235,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 - [ ] All demo scenarios run live from the Demo page, with replay as the fallback
 - [ ] Every verdict shows its evidence, the checks run and the audit trail
+- [ ] All 14 planted errors are caught, and the 6 clean invoices come back `MATCHED`
+- [ ] Verdicts are the same across 3 runs
 - [ ] No agent can call a tool outside its allowlist (refused calls are visible in the audit log)
-- [ ] Eval numbers are produced on the full dataset and shown in the dashboard
 - [ ] Runs on one 8GB-VRAM laptop with no internet connection
