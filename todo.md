@@ -131,12 +131,12 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] `data/render_pdfs.py`: about 15 normal PDFs and about 5 "scanned" ones (rasterised, noisy, slightly rotated)
 
 ### Phase 2: Transaction server and gateway
-- [ ] `servers/common/`: masking, row caps, pagination, audit-log writer (JSONL)
-- [ ] `servers/transactions/`: `get_vendor`, `lookup_invoice_number` (fuzzy), `find_transactions`, `get_purchase_order`, `vendor_payment_summary`
-- [ ] Read-only DB connection, parameterized queries only
-- [ ] `agent/gateway.py`: allowlist per role, query budget per invoice, routing, audit entry for every call
-- [ ] `scripts/start_servers.py`: start all 6 servers
-- [ ] Test every tool in MCP Inspector
+- [x] `servers/common/`: masking, row caps, pagination, audit-log writer (JSONL)
+- [x] `servers/transactions/`: `get_vendor`, `lookup_invoice_number` (fuzzy), `find_transactions`, `get_purchase_order`, `vendor_payment_summary`
+- [x] Read-only DB connection, parameterized queries only
+- [x] `agent/gateway.py`: allowlist per role, query budget per invoice, routing, audit entry for every call
+- [x] `scripts/start_servers.py`: start all 6 servers
+- [x] Test every tool in MCP Inspector
 
 ### Phase 3: Documents and extraction
 - [ ] `servers/documents/`: inbox manifest (`doc_id` → path + SHA-256), `list_documents`, `convert_document(doc_id, pages?)`, `get_document_metadata`
@@ -165,7 +165,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [ ] `anomaly_stats`: `vendor_amount_profile`, `split_invoice_check`, `date_flags` (`holidays` with country `NL`); aggregates only, minimum group size about 5
 - [ ] `review_cases`: `create_review_case`, `add_case_note`, `export_evidence_pack` (PDF + XLSX); append-only
 - [ ] Add their checks to `checks.py`, and emit `check_result` events for each
-- [ ] `agent/roles.py`: extractor / verifier / reporter allowlists (the verifier LLM sees 6 tools)
+- [x] `agent/roles.py`: extractor / verifier / reporter allowlists (the verifier LLM sees 6 tools)
 
 ### Phase 6: Eval
 - [ ] `eval/run_eval.py`: all 20 invoices × 3 runs. Per invoice: expected vs actual verdict, error caught, which check caught it, consistency across runs, seconds, tool calls

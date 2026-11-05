@@ -20,3 +20,8 @@ AUDIT_LOG_PATH = Path(os.environ.get("INVOICE_AUDIT_LOG", DATA_DIR / "audit.json
 
 # The synthetic data is generated "as of" this date so every run is identical.
 AS_OF = date(2026, 11, 5)
+
+
+def db_path() -> Path:
+    """The database path, read at call time so tests can point at a temporary copy."""
+    return Path(os.environ.get("INVOICE_DB_PATH", DB_PATH))
