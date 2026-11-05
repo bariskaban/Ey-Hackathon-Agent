@@ -131,8 +131,14 @@ def wrap_document(markdown: str) -> str:
 
 
 async def extract_invoice(gateway: Gateway, llm: LLM, doc_id: str, invoice_id: str | None = None) -> Extraction:
-    result = Extraction(doc_id)
+    """Read a document and extract the invoice (the two steps of `verify()`, run together)."""
     doc = await read_document(gateway, doc_id, invoice_id or doc_id)
+    return await extract_from_document(llm, doc_id, doc)
+
+
+async def extract_from_document(llm: LLM, doc_id: str, doc: dict) -> Extraction:
+    """Extract the invoice from an already-read document (the dict returned by `read_document`)."""
+    result = Extraction(doc_id)
     result.method, result.language = doc["method"], doc["language"]
     result.char_count, result.truncated, result.markdown = doc["char_count"], doc["truncated"], doc["markdown"]
 

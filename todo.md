@@ -112,8 +112,8 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 **Severity colours:** high red `#DC2626`, medium orange `#EA580C`, low yellow `#CA8A04`. Check status: pass green, fail red, skipped grey. Always pair colour with an icon and a text label (dark mode, colour-blind users).
 
-- [ ] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus`
-- [ ] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError`
+- [x] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus` (Invoice, Verdict, the 8 event types, AuditEntry, ReviewCase, EvalProgress, EvalReport, SystemStatus and DocumentInfo are written; the UI side still needs to review the field names.)
+- [x] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError` (done as the real service: verify, documents, verdict, audit log and status work; case and eval functions raise `NotImplementedError` until Phases 5 and 6.)
 - [ ] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later
 - [ ] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
 
@@ -147,11 +147,11 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] Check field-level extraction accuracy on all 20 invoices, especially the scanned ones (qwen3:8b: 99.0% of fields overall, 99.8% on text PDFs, 96.3% on scans; 15 of 20 invoices fully correct. The remaining errors are OCR misreads that the model copied faithfully, e.g. VAT `B01` read as `801`. Phase 5 must handle this: for scanned documents, try O/0 and B/8 repairs before a failed VAT or IBAN checksum counts as `INVALID_VAT_NUMBER`, and flag the field as low confidence.)
 
 ### Phase 4: Verification core and service
-- [ ] `agent/llm.py`: Ollama wrapper (`num_ctx` 8k–16k, `temperature` 0, tools, `format`)
-- [ ] `agent/loop.py`: MCP ↔ Ollama tool loop, step limit about 8, invoice text wrapped as untrusted data
-- [ ] `agent/checks.py`: fixed checks (vendor, duplicate, already paid, PO and receipt match)
-- [ ] `agent/service.py`: real implementation of `verify()` emitting every event type in section 1
-- [ ] Record each run's events to `data/runs/<doc_id>.jsonl` (powers the UI's replay mode)
+- [x] `agent/llm.py`: Ollama wrapper (`num_ctx` 8k–16k, `temperature` 0, tools, `format`)
+- [x] `agent/loop.py`: MCP ↔ Ollama tool loop, step limit about 8, invoice text wrapped as untrusted data
+- [x] `agent/checks.py`: fixed checks (vendor, duplicate, already paid, PO and receipt match) (Done: vendor, injection scan, duplicate, already paid, PO amount and goods receipt. The verdict comes from fixed rules in code; the model can only escalate to `NEEDS_REVIEW`. The other checks are added in Phase 5.)
+- [x] `agent/service.py`: real implementation of `verify()` emitting every event type in section 1
+- [x] Record each run's events to `data/runs/<doc_id>.jsonl` (powers the UI's replay mode)
 - [ ] **Milestone M2:** one invoice end to end, live in the UI
 
 ### Phase 5: Rule servers

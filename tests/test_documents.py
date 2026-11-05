@@ -1,37 +1,12 @@
 """Documents server: inbox manifest, conversion, OCR fallback, language check, safety rules."""
 
 import asyncio
-import os
-import shutil
-from pathlib import Path
 
 import pytest
 
 from agent.gateway import Gateway
 from servers.common.audit import AuditLog
-from servers.common.config import INVOICES_DIR
 from servers.documents import convert, manifest, tools
-
-# Where the test data lives (conftest generates it) and which PDFs were rendered
-# Rendering needs a separate step, so render into the test data folder here.
-
-
-@pytest.fixture(scope="module")
-def inbox(tmp_path_factory, ground_truth):
-    import subprocess
-    import sys
-
-    root = Path(__file__).resolve().parents[1]
-    subprocess.run([sys.executable, str(root / "data" / "render_pdfs.py")], check=True, cwd=root)
-    folder = tmp_path_factory.mktemp("inbox")
-    for entry in ground_truth:
-        shutil.copy2(INVOICES_DIR / entry["file"], folder / entry["file"])
-    os.environ["INVOICE_INBOX_DIR"] = str(folder)
-    os.environ["INVOICE_CACHE_DIR"] = str(tmp_path_factory.mktemp("cache"))
-    result = manifest.sync_inbox()
-    yield folder, result
-    os.environ.pop("INVOICE_INBOX_DIR")
-    os.environ.pop("INVOICE_CACHE_DIR")
 
 
 def test_manifest_has_all_documents_and_flags_scans(inbox, ground_truth):
