@@ -11,7 +11,7 @@ from nicegui import run, ui
 from ui.components.widgets import (check_icon, check_word, error_label, evidence_table, page_header, severity_tag,
                                    stamp, verdict_badge, yes_no)
 from ui.services import open_case_count, svc
-from ui.theme import CHECK_LABELS, SERVER_GROUPS, esc, eur, fmt_date, html, key, shell
+from ui.theme import CHECK_LABELS, ERROR_LABELS, SERVER_GROUPS, SEVERITIES, VERDICTS, esc, eur, fmt_date, html, key, shell
 
 FIELD_LABELS = [
     ("supplier_name", "Supplier"), ("supplier_country", "Supplier country"),
@@ -72,8 +72,7 @@ async def verdict_page(doc_id: str) -> None:
              + actions + "</div>")
 
         # ---------- verdict ----------
-        flags = "".join(severity_tag(_severity_of(v, f), f"{error_label(f)}, {_severity_of(v, f)}")
-                        for f in (v.risk_flags or [])) or '<span class="tm-small">None</span>'
+        flags = "".join(_flag_html(v, f) for f in (v.risk_flags or [])) or '<span class="tm-small">None</span>'
         conf = float(v.confidence or 0)
         reason = (f'<p style="margin:0;font-weight:700;color:#1D4ED8">Why a person must look: {esc(v.reason)}</p>'
                   if getattr(v, "reason", None) else "")
@@ -83,13 +82,13 @@ async def verdict_page(doc_id: str) -> None:
              f'<h2 class="tm-h2">What the agent found</h2>{reason}'
              f'<p style="margin:0;font-size:17px;line-height:1.6;max-width:68ch">{esc(v.auditor_note)}</p>'
              f'<p class="tm-small" style="margin:0">Written by the verifier agent. The verdict itself comes from the fixed checks, not from this text.</p></div>'
-             f'<div style="flex:0 1 230px;display:flex;flex-direction:column;gap:14px"><div>'
+             f'<div style="flex:1 1 280px;min-width:0;max-width:380px;display:flex;flex-direction:column;gap:14px"><div>'
              f'<div style="display:flex;justify-content:space-between;font-size:14px"><strong>Confidence</strong>'
              f'<span class="tm-num" style="font-size:14px">{conf:.2f}</span></div>'
              f'<div class="tm-bar" style="margin-top:6px" aria-hidden="true"><div style="width:{conf * 100:.0f}%"></div></div>'
              f'<p class="tm-small" style="margin:6px 0 0;font-size:12px">From the check results: '
              f'{len([c for c in v.checks if key(c.status) != "skipped"])} of {len(v.checks)} checks ran with complete data.</p></div>'
-             f'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start"><strong style="font-size:14px">Risk flags</strong>{flags}</div>'
+             f'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;min-width:0"><strong style="font-size:14px">Risk flags</strong>{flags}</div>'
              f'</div></section>')
 
         # ---------- invoice preview + extracted fields ----------
@@ -187,6 +186,29 @@ def _pdf_pages(path: Path, max_pages: int = 3) -> list[str]:
     except Exception:
         return []
     return out
+
+
+def _flag_html(v: Any, flag: Any) -> str:
+    """One risk flag. Mock flags are error codes; the real agent writes short sentences, which must wrap.
+
+    A sentence the model added ("(model) ...") is advice, not a finding, so it is shown as an AI note
+    in the "needs review" blue instead of with a severity it was never given.
+    """
+    if key(flag) in ERROR_LABELS:
+        severity = _severity_of(v, flag)
+        return severity_tag(severity, f"{error_label(flag)}, {severity}")
+    text = str(flag).strip()
+    advisory = text.startswith("(model)")
+    if advisory:
+        rest = text[len("(model)"):].strip()
+        text = ("AI " if rest.startswith("suggests") else "AI note: ") + rest
+    text = text[:1].upper() + text[1:]
+    ranks = [key(d.severity) for d in v.discrepancies or [] if key(d.severity) in SEVERITIES]
+    top = None if advisory or not ranks else min(ranks, key=list(SEVERITIES).index)
+    colour = SEVERITIES[top] if top else VERDICTS["NEEDS_REVIEW"]
+    icon = colour["icon"]
+    return (f'<span class="tm-tag tm-tag-wrap" style="border-color:{colour["base"]};color:{colour["text"]}">'
+            f'<span aria-hidden="true">{icon}</span><span>{esc(text)}</span></span>')
 
 
 def _severity_of(v: Any, flag: Any) -> str:

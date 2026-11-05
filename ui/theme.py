@@ -231,6 +231,7 @@ a{{color:var(--tm-ink)}} a:hover{{color:var(--tm-body2)}}
 .tm-badge-icon{{width:18px;text-align:center}}
 .tm-tag{{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:2px 8px;
   border-radius:4px;border:1.5px solid;white-space:nowrap}}
+.tm-tag-wrap{{white-space:normal;align-items:flex-start;text-align:left;line-height:1.35;max-width:100%}}
 .tm-role{{font-size:12px;font-weight:700;padding:1px 7px;border-radius:4px;border:1.5px solid var(--tm-ink);white-space:nowrap}}
 .tm-role-extractor{{background:var(--tm-sheet);color:var(--tm-ink)}}
 .tm-role-verifier{{background:var(--tm-ink);color:var(--tm-ground)}}
