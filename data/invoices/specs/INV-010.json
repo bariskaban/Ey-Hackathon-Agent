@@ -1,0 +1,53 @@
+{
+  "invoice_number": "F-2026-039",
+  "invoice_date": "2026-10-22",
+  "supply_date": "2026-10-18",
+  "due_date": "2026-11-21",
+  "po_number": "PO-2026-1400",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Eaton Industries",
+    "address": "Nisaring 2, 8064 SB Wilsum",
+    "country": "NL",
+    "vat_number": "NL304451095B01",
+    "kvk_number": "22660194",
+    "iban": "NL39TRIO9433677882"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "LOG-002",
+      "description": "Courier parcel (per parcel)",
+      "quantity": "61",
+      "unit_price": "12.59",
+      "vat_rate": "21",
+      "line_total": "767.99"
+    },
+    {
+      "sku": "LOG-003",
+      "description": "Warehouse storage (per pallet per month)",
+      "quantity": "16",
+      "unit_price": "23.99",
+      "vat_rate": "21",
+      "line_total": "383.84"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "1151.83",
+      "vat": "241.88"
+    }
+  ],
+  "total_excl_vat": "1151.83",
+  "total_vat": "241.88",
+  "total_incl_vat": "1393.71",
+  "reverse_charge": false,
+  "notes": null
+}

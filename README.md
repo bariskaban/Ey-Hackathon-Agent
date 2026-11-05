@@ -64,6 +64,18 @@ tesseract --list-langs
 
 `tesseract --list-langs` should list `eng`.
 
+### 6. Generate the synthetic data
+
+The company records and the 20 test invoices are generated, not downloaded. The output is identical on every run.
+
+```bash
+python data/generate.py
+python data/render_pdfs.py
+```
+
+- `generate.py` writes `data/db.sqlite` (vendors, purchase orders, receipts, about 2,000 past transactions and reference data), plus `data/invoices/ground_truth.json` and the invoice specs.
+- `render_pdfs.py` renders the 20 invoices as PDFs in `data/invoices/`. Five of them are "scanned" (image only, slightly rotated and noisy) to test OCR.
+
 ## Project files
 
 | File | Purpose |

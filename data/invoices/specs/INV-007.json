@@ -1,0 +1,61 @@
+{
+  "invoice_number": "FA-00016",
+  "invoice_date": "2026-10-15",
+  "supply_date": "2026-10-08",
+  "due_date": "2026-11-14",
+  "po_number": "PO-2026-1397",
+  "currency": "EUR",
+  "supplier": {
+    "name": "van de Pavert BV",
+    "address": "Emmaboulevard 361, 2990AQ Zuidoostbeemster",
+    "country": "NL",
+    "vat_number": "NL575808013B01",
+    "kvk_number": "83863413",
+    "iban": "NL47INGB8807209816"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "PKG-002",
+      "description": "Bubble wrap roll 50 m",
+      "quantity": "57",
+      "unit_price": "27.84",
+      "vat_rate": "21",
+      "line_total": "1586.88"
+    },
+    {
+      "sku": "PKG-003",
+      "description": "Euro pallets",
+      "quantity": "26",
+      "unit_price": "14.83",
+      "vat_rate": "21",
+      "line_total": "385.58"
+    },
+    {
+      "sku": "PKG-001",
+      "description": "Cardboard boxes 40x30 cm (pack of 100)",
+      "quantity": "3",
+      "unit_price": "84.87",
+      "vat_rate": "21",
+      "line_total": "254.61"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "2227.07",
+      "vat": "467.68"
+    }
+  ],
+  "total_excl_vat": "2227.07",
+  "total_vat": "467.68",
+  "total_incl_vat": "2694.75",
+  "reverse_charge": false,
+  "notes": null
+}

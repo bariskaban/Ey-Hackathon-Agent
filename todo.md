@@ -20,8 +20,8 @@ See [idea.md](idea.md) for the full design. This file splits the work between th
 
 - [x] Create the GitHub repo, `.gitignore` (data/db, cache, outbox, runs, `.venv`), and `README.md` with run instructions
 - [x] Python 3.11+, use `uv` for the environment, one shared `pyproject.toml`
-- [ ] Install Ollama and pull the models: `qwen3:8b` (later `gpt-oss:20b` and the Qwen3 30B-A3B model for comparison; check the exact tags in the Ollama library)
-- [ ] Install Tesseract (English language pack only), and Node (only needed for `npx @modelcontextprotocol/inspector`)
+- [x] Install Ollama and pull the models: `qwen3:8b` (later `gpt-oss:20b` and the Qwen3 30B-A3B model for comparison; check the exact tags in the Ollama library)
+- [x] Install Tesseract (English language pack only), and Node (only needed for `npx @modelcontextprotocol/inspector`)
 - [x] **Agree the contract (section 1) together**, about an hour. TECH writes `schemas.py`; UI reviews field names and what each screen needs. (Conventions agreed, see "Agreed decisions" in section 1; the full `schemas.py` models are still open in section 1.)
 - [x] Agree the verdict names, the 14 error-type names and the severity colours (they show up everywhere in the UI). (Agreed, see "Agreed decisions" in section 1; enums live in `agent/schemas.py`; the verdict enum is `VerdictStatus` so `Verdict` stays free for the full result model.)
 - [x] Git workflow: short feature branches → PR → merge to `main`, and keep `main` runnable
@@ -122,13 +122,13 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 ## 2. TECH: technical layer
 
 ### Phase 1: Data
-- [ ] DB schema (SQLite): vendors (with country, VAT number, KvK number, IBAN), POs, PO lines (with VAT category), goods receipts, transactions, invoices seen, employees
-- [ ] Reference tables: VAT rates with validity dates (21 / 9 / 0), EU countries, bank codes (INGB, RABO, ABNA…), sanctions (EU consolidated list sample), review cases
-- [ ] `data/generate.py`: about 30 vendors (mostly Dutch, a few Belgian and German), about 2,000 past transactions over two years. All text in English; Faker `nl_NL` only for company names and addresses
-- [ ] Valid VAT numbers and IBANs for clean vendors (generate them so they pass `python-stdnum`)
-- [ ] **The 20 test invoices:** 6 clean + 14 with one planted error each (idea.md §4), plus `ground_truth.json`
-- [ ] All invoice wording in English ("Invoice", "VAT", "Reverse charge", "Total incl. VAT")
-- [ ] `data/render_pdfs.py`: about 15 normal PDFs and about 5 "scanned" ones (rasterised, noisy, slightly rotated)
+- [x] DB schema (SQLite): vendors (with country, VAT number, KvK number, IBAN), POs, PO lines (with VAT category), goods receipts, transactions, invoices seen, employees
+- [x] Reference tables: VAT rates with validity dates (21 / 9 / 0), EU countries, bank codes (INGB, RABO, ABNA…), sanctions (EU consolidated list sample), review cases
+- [x] `data/generate.py`: about 30 vendors (mostly Dutch, a few Belgian and German), about 2,000 past transactions over two years. All text in English; Faker `nl_NL` only for company names and addresses
+- [x] Valid VAT numbers and IBANs for clean vendors (generate them so they pass `python-stdnum`)
+- [x] **The 20 test invoices:** 6 clean + 14 with one planted error each (idea.md §4), plus `ground_truth.json`
+- [x] All invoice wording in English ("Invoice", "VAT", "Reverse charge", "Total incl. VAT")
+- [x] `data/render_pdfs.py`: about 15 normal PDFs and about 5 "scanned" ones (rasterised, noisy, slightly rotated)
 
 ### Phase 2: Transaction server and gateway
 - [ ] `servers/common/`: masking, row caps, pagination, audit-log writer (JSONL)

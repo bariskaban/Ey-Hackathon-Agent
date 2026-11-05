@@ -1,0 +1,53 @@
+{
+  "invoice_number": "RE/0108",
+  "invoice_date": "2026-10-19",
+  "supply_date": "2026-10-14",
+  "due_date": "2026-11-18",
+  "po_number": "PO-2026-1404",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Vanhove BV",
+    "address": "Ismaillei 3, 1216 Quevaucamps",
+    "country": "BE",
+    "vat_number": "BE0530457366",
+    "kvk_number": null,
+    "iban": "BE66410015628743"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "SW-003",
+      "description": "Implementation (per hour)",
+      "quantity": "8",
+      "unit_price": "133.55",
+      "vat_rate": "0",
+      "line_total": "1068.40"
+    },
+    {
+      "sku": "SW-002",
+      "description": "Premium support plan (per year)",
+      "quantity": "1",
+      "unit_price": "1830.93",
+      "vat_rate": "0",
+      "line_total": "1830.93"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "0",
+      "base": "2899.33",
+      "vat": "0.00"
+    }
+  ],
+  "total_excl_vat": "2899.33",
+  "total_vat": "0.00",
+  "total_incl_vat": "2899.33",
+  "reverse_charge": true,
+  "notes": null
+}

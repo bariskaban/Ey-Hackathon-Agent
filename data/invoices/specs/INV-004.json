@@ -1,0 +1,53 @@
+{
+  "invoice_number": "RE/0044",
+  "invoice_date": "2026-10-21",
+  "supply_date": "2026-10-13",
+  "due_date": "2026-11-20",
+  "po_number": "PO-2026-1394",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Spie\u00df Ebert Stiftung & Co. KGaA",
+    "address": "Stahrstra\u00dfe 96/34, 66299 Luckenwalde",
+    "country": "DE",
+    "vat_number": "DE749431082",
+    "kvk_number": null,
+    "iban": "DE72100100107377088167"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "SW-002",
+      "description": "Premium support plan (per year)",
+      "quantity": "1",
+      "unit_price": "1778.46",
+      "vat_rate": "21",
+      "line_total": "1778.46"
+    },
+    {
+      "sku": "SW-001",
+      "description": "Software licence (per seat per year)",
+      "quantity": "2",
+      "unit_price": "139.48",
+      "vat_rate": "21",
+      "line_total": "278.96"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "2057.42",
+      "vat": "432.06"
+    }
+  ],
+  "total_excl_vat": "2057.42",
+  "total_vat": "432.06",
+  "total_incl_vat": "2489.48",
+  "reverse_charge": false,
+  "notes": null
+}

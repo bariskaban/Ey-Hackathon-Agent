@@ -1,0 +1,53 @@
+{
+  "invoice_number": "F-2026-101",
+  "invoice_date": "2026-11-01",
+  "supply_date": "2026-10-24",
+  "due_date": "2026-12-01",
+  "po_number": "PO-2026-1399",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Geneart & Gerritsen",
+    "address": "Svenring 0, 2065PM Harmelen",
+    "country": "NL",
+    "vat_number": "NL229927269B01",
+    "kvk_number": "43273328",
+    "iban": "NL46RABO4569956444"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "CLN-002",
+      "description": "Window cleaning (per visit)",
+      "quantity": "3",
+      "unit_price": "209.88",
+      "vat_rate": "21",
+      "line_total": "629.64"
+    },
+    {
+      "sku": "CLN-001",
+      "description": "Office cleaning (per month)",
+      "quantity": "1",
+      "unit_price": "1265.81",
+      "vat_rate": "21",
+      "line_total": "1265.81"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "1895.45",
+      "vat": "398.04"
+    }
+  ],
+  "total_excl_vat": "1895.45",
+  "total_vat": "398.04",
+  "total_incl_vat": "2293.49",
+  "reverse_charge": false,
+  "notes": null
+}

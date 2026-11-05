@@ -1,0 +1,53 @@
+{
+  "invoice_number": "INV202600047",
+  "invoice_date": "2026-10-13",
+  "supply_date": "2026-10-06",
+  "due_date": "2026-11-12",
+  "po_number": "PO-2026-1396",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Qbuzz",
+    "address": "Loekhof 5, 4983AE Blije",
+    "country": "NL",
+    "vat_number": "NL358633998B01",
+    "kvk_number": "86149359",
+    "iban": "NL32INGB8957813353"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "ITS-003",
+      "description": "Helpdesk support (per hour)",
+      "quantity": "2",
+      "unit_price": "78.33",
+      "vat_rate": "21",
+      "line_total": "156.66"
+    },
+    {
+      "sku": "ITS-001",
+      "description": "IT consulting (per hour)",
+      "quantity": "9",
+      "unit_price": "118.40",
+      "vat_rate": "21",
+      "line_total": "1065.60"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "1222.26",
+      "vat": "256.67"
+    }
+  ],
+  "total_excl_vat": "1222.26",
+  "total_vat": "256.67",
+  "total_incl_vat": "1478.93",
+  "reverse_charge": false,
+  "notes": null
+}

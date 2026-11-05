@@ -1,0 +1,53 @@
+{
+  "invoice_number": "INV202600058",
+  "invoice_date": "2026-10-31",
+  "supply_date": null,
+  "due_date": "2026-11-30",
+  "po_number": "PO-2026-1402",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Rotteveel & Hekker",
+    "address": "Marklaan 35, 5487DF Rohel",
+    "country": "NL",
+    "vat_number": "NL889991777B01",
+    "kvk_number": null,
+    "iban": "NL96INGB7507497883"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "MNT-003",
+      "description": "Fire extinguisher check (per unit)",
+      "quantity": "34",
+      "unit_price": "17.20",
+      "vat_rate": "21",
+      "line_total": "584.80"
+    },
+    {
+      "sku": "MNT-002",
+      "description": "Lift inspection",
+      "quantity": "1",
+      "unit_price": "269.88",
+      "vat_rate": "21",
+      "line_total": "269.88"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "854.68",
+      "vat": "179.48"
+    }
+  ],
+  "total_excl_vat": "854.68",
+  "total_vat": "179.48",
+  "total_incl_vat": "1034.16",
+  "reverse_charge": false,
+  "notes": null
+}

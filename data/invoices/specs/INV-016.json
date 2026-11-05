@@ -1,0 +1,61 @@
+{
+  "invoice_number": "RE/0035",
+  "invoice_date": "2026-10-30",
+  "supply_date": "2026-10-25",
+  "due_date": "2026-11-29",
+  "po_number": "PO-2026-1406",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Stichting van Westfalen",
+    "address": "Jacklaan 38, 7969 XO Elshout",
+    "country": "NL",
+    "vat_number": "NL438715135B01",
+    "kvk_number": "63843426",
+    "iban": "NL91ABNA0284277889"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "CAT-001",
+      "description": "Lunch platter (10 persons)",
+      "quantity": "10",
+      "unit_price": "147.11",
+      "vat_rate": "21",
+      "line_total": "1471.10"
+    },
+    {
+      "sku": "CAT-002",
+      "description": "Bakery assortment",
+      "quantity": "13",
+      "unit_price": "62.88",
+      "vat_rate": "21",
+      "line_total": "817.44"
+    },
+    {
+      "sku": "CAT-003",
+      "description": "Fruit basket",
+      "quantity": "3",
+      "unit_price": "38.09",
+      "vat_rate": "21",
+      "line_total": "114.27"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "2402.81",
+      "vat": "504.59"
+    }
+  ],
+  "total_excl_vat": "2402.81",
+  "total_vat": "504.59",
+  "total_incl_vat": "2907.40",
+  "reverse_charge": false,
+  "notes": null
+}

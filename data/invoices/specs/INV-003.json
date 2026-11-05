@@ -1,0 +1,53 @@
+{
+  "invoice_number": "FA-00017",
+  "invoice_date": "2026-10-31",
+  "supply_date": "2026-10-28",
+  "due_date": "2026-11-30",
+  "po_number": "PO-2026-1393",
+  "currency": "EUR",
+  "supplier": {
+    "name": "van der Spaendonc & van Bernicia",
+    "address": "Elizelaan 2, 4542 WV Demen",
+    "country": "NL",
+    "vat_number": "NL203848421B01",
+    "kvk_number": "58181396",
+    "iban": "NL37BUNQ8776552803"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "OFF-001",
+      "description": "A4 copy paper 80g (box of 5 reams)",
+      "quantity": "488",
+      "unit_price": "23.98",
+      "vat_rate": "21",
+      "line_total": "11702.24"
+    },
+    {
+      "sku": "OFF-004",
+      "description": "Desk organiser",
+      "quantity": "144",
+      "unit_price": "21.58",
+      "vat_rate": "21",
+      "line_total": "3107.52"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "14809.76",
+      "vat": "3110.05"
+    }
+  ],
+  "total_excl_vat": "14809.76",
+  "total_vat": "3110.05",
+  "total_incl_vat": "17919.81",
+  "reverse_charge": false,
+  "notes": null
+}

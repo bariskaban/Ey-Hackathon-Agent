@@ -1,0 +1,66 @@
+{
+  "invoice_number": "INV202600065",
+  "invoice_date": "2026-10-17",
+  "supply_date": "2026-10-08",
+  "due_date": "2026-11-16",
+  "po_number": "PO-2026-1403",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Dorsman & Bruggeman",
+    "address": "Danielhof 6, 6752 WN Kuinre",
+    "country": "NL",
+    "vat_number": "NL324956459B01",
+    "kvk_number": "99949389",
+    "iban": "NL04ABNA8896606039"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "PAN-001",
+      "description": "Coffee beans 1 kg",
+      "quantity": "22",
+      "unit_price": "16.80",
+      "vat_rate": "9",
+      "line_total": "369.60"
+    },
+    {
+      "sku": "PAN-003",
+      "description": "Paper cups (pack of 500)",
+      "quantity": "18",
+      "unit_price": "6.50",
+      "vat_rate": "21",
+      "line_total": "117.00"
+    },
+    {
+      "sku": "PAN-002",
+      "description": "Mineral water (crate of 24)",
+      "quantity": "9",
+      "unit_price": "9.90",
+      "vat_rate": "9",
+      "line_total": "89.10"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "117.00",
+      "vat": "24.57"
+    },
+    {
+      "rate": "9",
+      "base": "458.70",
+      "vat": "41.28"
+    }
+  ],
+  "total_excl_vat": "575.70",
+  "total_vat": "65.85",
+  "total_incl_vat": "641.55",
+  "reverse_charge": false,
+  "notes": null
+}

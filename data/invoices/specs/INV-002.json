@@ -1,0 +1,53 @@
+{
+  "invoice_number": "INV202600084",
+  "invoice_date": "2026-10-20",
+  "supply_date": "2026-10-13",
+  "due_date": "2026-11-19",
+  "po_number": "PO-2026-1392",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Steinberg GmbH",
+    "address": "Gaetano-Barth-Gasse 8791, 93676 Donaueschingen",
+    "country": "DE",
+    "vat_number": "DE220123666",
+    "kvk_number": null,
+    "iban": "DE12100100109230117883"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "DSN-002",
+      "description": "Website design (per day)",
+      "quantity": "5",
+      "unit_price": "721.20",
+      "vat_rate": "0",
+      "line_total": "3606.00"
+    },
+    {
+      "sku": "DSN-001",
+      "description": "Brand design (per hour)",
+      "quantity": "5",
+      "unit_price": "97.71",
+      "vat_rate": "0",
+      "line_total": "488.55"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "0",
+      "base": "4094.55",
+      "vat": "0.00"
+    }
+  ],
+  "total_excl_vat": "4094.55",
+  "total_vat": "0.00",
+  "total_incl_vat": "4094.55",
+  "reverse_charge": true,
+  "notes": null
+}

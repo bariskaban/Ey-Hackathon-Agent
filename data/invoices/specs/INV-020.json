@@ -1,0 +1,53 @@
+{
+  "invoice_number": "F2026036",
+  "invoice_date": "2026-10-17",
+  "supply_date": "2026-10-08",
+  "due_date": "2026-11-16",
+  "po_number": "PO-2026-1410",
+  "currency": "EUR",
+  "supplier": {
+    "name": "Stichting West-Franci\u00eb, van",
+    "address": "Riklaan 78, 9980 TQ Den Ham",
+    "country": "NL",
+    "vat_number": "NL847959430B01",
+    "kvk_number": "84593961",
+    "iban": "NL62KNAB7380507338"
+  },
+  "buyer": {
+    "name": "Hollandse Handelsgroep B.V.",
+    "address": "Keizersgracht 482, 1017 EG Amsterdam",
+    "country": "NL",
+    "vat_number": "NL857412368B01",
+    "kvk_number": "34218876"
+  },
+  "lines": [
+    {
+      "sku": "MNT-003",
+      "description": "Fire extinguisher check (per unit)",
+      "quantity": "79",
+      "unit_price": "17.56",
+      "vat_rate": "21",
+      "line_total": "1387.24"
+    },
+    {
+      "sku": "MNT-002",
+      "description": "Lift inspection",
+      "quantity": "3",
+      "unit_price": "277.12",
+      "vat_rate": "21",
+      "line_total": "831.36"
+    }
+  ],
+  "vat_breakdown": [
+    {
+      "rate": "21",
+      "base": "2218.60",
+      "vat": "465.91"
+    }
+  ],
+  "total_excl_vat": "2218.60",
+  "total_vat": "465.91",
+  "total_incl_vat": "2684.51",
+  "reverse_charge": false,
+  "notes": null
+}
