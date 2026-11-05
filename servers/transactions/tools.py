@@ -20,6 +20,8 @@ VAT_LIKE = re.compile(r"^[A-Za-z]{2}[0-9A-Za-z .\-]{8,}$")
 OCR_CONFUSABLES = str.maketrans({"O": "0", "I": "1", "L": "1", "S": "5", "B": "8", "Z": "2"})
 FUZZY_VENDOR_CUTOFF = 80
 FUZZY_INVOICE_CUTOFF = 95
+LOOSE_INVOICE_CUTOFF = 75  # a rougher number match, only counted together with the same amount and close dates
+LOOSE_MATCH_DAYS = 10
 
 
 # --------------------------------------------------------------------------- helpers
@@ -33,6 +35,17 @@ def _confusable_form(normalized: str) -> str:
     """Fold look-alike characters (O/0, I/1/L, S/5, B/8) and drop leading zeros in digit runs."""
     folded = normalized.translate(OCR_CONFUSABLES)
     return re.sub(r"(?<![0-9])0+(?=[0-9])", "", folded)
+
+
+def _same_amount_and_time(row, amount: float | None, invoice_date: str | None) -> bool:
+    """The same amount to the cent, and an invoice date within LOOSE_MATCH_DAYS of the earlier one."""
+    if amount is None or not invoice_date or abs(row["amount"] - amount) > 0.01:
+        return False
+    try:
+        gap = abs((date.fromisoformat(invoice_date) - date.fromisoformat(row["date"])).days)
+    except ValueError:
+        return False
+    return gap <= LOOSE_MATCH_DAYS
 
 
 def _parse_date(value: str | None, name: str) -> str | None:
@@ -101,11 +114,14 @@ def get_vendor(name_or_vat_number: str) -> dict:
         }
 
 
-def lookup_invoice_number(vendor_id: str, invoice_no: str) -> dict:
+def lookup_invoice_number(vendor_id: str, invoice_no: str, amount: float | None = None,
+                          invoice_date: str | None = None) -> dict:
     """Exact and fuzzy matches of an invoice number against invoices already seen for the vendor.
 
     The same number written differently (F-2026-001 / F2026001), OCR look-alikes (O/0, I/1)
-    and near-identical numbers all count as matches, with a match_type.
+    and near-identical numbers all count as matches, with a match_type. If `amount` (incl. VAT) and
+    `invoice_date` are given, a number that is only roughly similar also counts when the amount is
+    the same and the dates are within 10 days: a scan can misread a digit of a re-sent invoice.
     """
     normalized = normalize_invoice_no(invoice_no)
     if not normalized:
@@ -128,9 +144,12 @@ def lookup_invoice_number(vendor_id: str, invoice_no: str) -> dict:
             match_type, score = "ocr_lookalike", 98.0
         else:
             score = fuzz.ratio(normalized, other)
-            if score < FUZZY_INVOICE_CUTOFF:
+            if score >= FUZZY_INVOICE_CUTOFF:
+                match_type = "fuzzy"
+            elif score >= LOOSE_INVOICE_CUTOFF and _same_amount_and_time(row, amount, invoice_date):
+                match_type = "similar_number_same_amount"
+            else:
                 continue
-            match_type = "fuzzy"
         matches.append({"invoice_no": row["invoice_no"], "match_type": match_type, "score": round(score, 1),
                         "amount": row["amount"], "date": row["date"], "status": row["status"]})
     matches.sort(key=lambda m: -m["score"])

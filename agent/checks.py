@@ -180,8 +180,11 @@ async def check_duplicate_invoice(ctx: Context) -> CheckOutcome:
         return _skipped(name, server, "vendor not found, cannot compare against its invoices")
     if not ctx.invoice.invoice_number:
         return _skipped(name, server, "the invoice has no invoice number")
-    result = await ctx.call("lookup_invoice_number", {"vendor_id": ctx.vendor["id"],
-                                                      "invoice_no": ctx.invoice.invoice_number})
+    args = {"vendor_id": ctx.vendor["id"], "invoice_no": ctx.invoice.invoice_number}
+    total = _money(ctx.invoice.total_incl_vat)
+    if total is not None and ctx.invoice.invoice_date:
+        args.update(amount=float(total), invoice_date=ctx.invoice.invoice_date)
+    result = await ctx.call("lookup_invoice_number", args)
     if not result["ok"]:
         return _skipped(name, server, f"lookup failed: {result['error']}")
     matches = result["data"]["matches"]

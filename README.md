@@ -312,6 +312,18 @@ Real invoices do not look alike, so neither do these. `python scripts/make_sampl
 | Clean | 10 | Should be `Matched`: domestic and reverse-charge (Germany, Belgium), mixed 9% and 21% rates, books, a freight line, several lines |
 | Faulty | 20 | Every one of the 14 planted errors at least once, including a prompt injection hidden in white text and a large invoice dated on a Saturday, plus one invoice with two problems at once |
 
+**How the agent does on them** (`qwen3:8b`, a clean rebuild): 23 of the 30 give the expected verdict. The other seven are limits of the model or of OCR, not of the checks, and none is approved wrongly except as noted:
+
+| Samples | What happens | Outcome |
+|---|---|---|
+| 2, 11, 21 (a scan, a phone photo, a skewed photo) | OCR cannot read key fields | `Needs review`: sent to a person, which is the intended safe fail |
+| 13 (a poor scan of a typewriter printout) | The table is garbled, so the lines do not add up | `Partial match` from the arithmetic check |
+| 10 (a till-roll receipt) | The model takes the "6 x EUR 16.80" line as the description and double counts the VAT | `Partial match` from the arithmetic check |
+| 12 (a sidebar layout, supplier named "NS") | The model swaps supplier and buyer | `Not found`, sent to a person |
+| 14 | The model drops one line description | `Mismatch` on mandatory fields |
+
+These samples found and led to fixes for: Dutch-style amounts (`4.304,47`) and dates (`27/10/2026`) being treated as unconfirmed, dates not converted to ISO, every address looking doubtful, an injection hidden in white text with unusual wording, and a re-sent invoice with a misread digit in its number slipping past the duplicate check.
+
 The first seven show the same data as seven of the 20 test invoices, in new designs. The other 23 are new invoices with their own purchase orders, receipts and payments in the database, so if your database is older than this feature, run `python data/generate.py` once more (it rebuilds `data/db.sqlite` and so clears any review cases you created). The invoice data for the 23 is in `data/invoices/sample_ground_truth.json`, and the drawing code is in `data/render_samples.py`.
 
 ## Evaluation
@@ -402,4 +414,4 @@ Read [CLAUDE.md](CLAUDE.md). In short: never commit to `main`; work on a branch 
 - Invoices must be in English; anything else goes straight to review.
 - Scans depend on OCR quality. Unreadable key fields send the invoice to a person rather than guessing.
 - The data is synthetic. Connecting Vera to a real ledger (for example SAP or Exact) means writing new servers behind the same tools; the agent and the interface would not change.
-- Evaluated on 20 invoices with one model (`qwen3:8b`).
+- Evaluated on 20 invoices with one model (`qwen3:8b`). On the 30 differently designed samples it gets 23 right; the rest depend on OCR quality and on how unusual the layout is (see [Sample invoices](#sample-invoices-for-stress-testing)).
