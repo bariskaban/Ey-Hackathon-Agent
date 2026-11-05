@@ -54,6 +54,8 @@ python -m pip install -e . pytest ruff
 ollama pull qwen3:8b
 ```
 
+Ollama can run on Windows or inside WSL; the code reaches it at `http://127.0.0.1:11434` either way (set `OLLAMA_HOST` to use another address, and `INVOICE_MODEL` to use another model). If Ollama runs in WSL, keep a WSL terminal open while you work: WSL shuts the distro down when no session is open, which stops Ollama with it.
+
 ### 5. Check the install
 
 ```bash
@@ -75,6 +77,18 @@ python data/render_pdfs.py
 
 - `generate.py` writes `data/db.sqlite` (vendors, purchase orders, receipts, about 2,000 past transactions and reference data), plus `data/invoices/ground_truth.json` and the invoice specs.
 - `render_pdfs.py` renders the 20 invoices as PDFs in `data/invoices/`. Five of them are "scanned" (image only, slightly rotated and noisy) to test OCR.
+
+Then put the invoices in the inbox, where documents wait to be processed:
+
+```bash
+python scripts/load_inbox.py
+```
+
+To measure how well the model reads the invoices (needs Ollama running):
+
+```bash
+python eval/extraction_accuracy.py
+```
 
 ### 7. Run the tests
 

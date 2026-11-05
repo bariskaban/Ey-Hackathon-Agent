@@ -139,12 +139,12 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 - [x] Test every tool in MCP Inspector
 
 ### Phase 3: Documents and extraction
-- [ ] `servers/documents/`: inbox manifest (`doc_id` → path + SHA-256), `list_documents`, `convert_document(doc_id, pages?)`, `get_document_metadata`
-- [ ] MarkItDown conversion, OCR fallback (English) when there's no text layer, output cap with paging, cache by file hash
-- [ ] Language check (`langdetect`): return `language` from `convert_document`; anything not English stops early with `NEEDS_REVIEW`
-- [ ] Allowed file types, maximum size, maximum page count; raw paths and URIs are never accepted
-- [ ] `agent/extract.py`: Markdown → Ollama (`format` = Invoice JSON schema) → Pydantic; retry once on failure
-- [ ] Check field-level extraction accuracy on all 20 invoices, especially the scanned ones
+- [x] `servers/documents/`: inbox manifest (`doc_id` → path + SHA-256), `list_documents`, `convert_document(doc_id, pages?)`, `get_document_metadata`
+- [x] MarkItDown conversion, OCR fallback (English) when there's no text layer, output cap with paging, cache by file hash
+- [x] Language check (`langdetect`): return `language` from `convert_document`; anything not English stops early with `NEEDS_REVIEW`
+- [x] Allowed file types, maximum size, maximum page count; raw paths and URIs are never accepted
+- [x] `agent/extract.py`: Markdown → Ollama (`format` = Invoice JSON schema) → Pydantic; retry once on failure
+- [x] Check field-level extraction accuracy on all 20 invoices, especially the scanned ones (qwen3:8b: 99.0% of fields overall, 99.8% on text PDFs, 96.3% on scans; 15 of 20 invoices fully correct. The remaining errors are OCR misreads that the model copied faithfully, e.g. VAT `B01` read as `801`. Phase 5 must handle this: for scanned documents, try O/0 and B/8 repairs before a failed VAT or IBAN checksum counts as `INVALID_VAT_NUMBER`, and flag the field as low confidence.)
 
 ### Phase 4: Verification core and service
 - [ ] `agent/llm.py`: Ollama wrapper (`num_ctx` 8k–16k, `temperature` 0, tools, `format`)
