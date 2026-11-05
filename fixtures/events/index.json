@@ -1,0 +1,86 @@
+[
+  {
+    "file": "clean.jsonl",
+    "doc_id": "INV-015",
+    "scenario": "A clean invoice: every check passes, no review case is opened.",
+    "verdict": "MATCHED",
+    "review_case_id": null,
+    "events": 45,
+    "event_types": {
+      "stage": 10,
+      "tool_call": 15,
+      "markdown_ready": 1,
+      "invoice_extracted": 1,
+      "check_result": 16,
+      "llm_note": 1,
+      "verdict": 1
+    }
+  },
+  {
+    "file": "duplicate.jsonl",
+    "doc_id": "INV-020",
+    "scenario": "A scanned duplicate: the same invoice number in a different format as one already approved.",
+    "verdict": "MISMATCH",
+    "review_case_id": "RC-0001",
+    "events": 47,
+    "event_types": {
+      "stage": 12,
+      "tool_call": 15,
+      "markdown_ready": 1,
+      "invoice_extracted": 1,
+      "check_result": 16,
+      "llm_note": 1,
+      "verdict": 1
+    }
+  },
+  {
+    "file": "reverse_charge_error.jsonl",
+    "doc_id": "INV-004",
+    "scenario": "A German supplier charges 21% Dutch VAT on a B2B service instead of using reverse charge.",
+    "verdict": "MISMATCH",
+    "review_case_id": "RC-0002",
+    "events": 48,
+    "event_types": {
+      "stage": 12,
+      "tool_call": 16,
+      "markdown_ready": 1,
+      "invoice_extracted": 1,
+      "check_result": 16,
+      "llm_note": 1,
+      "verdict": 1
+    }
+  },
+  {
+    "file": "prompt_injection.jsonl",
+    "doc_id": "INV-018",
+    "scenario": "The invoice text tells the AI to mark it as verified. The injection is flagged and the model never sees it.",
+    "verdict": "NEEDS_REVIEW",
+    "review_case_id": "RC-0003",
+    "events": 46,
+    "event_types": {
+      "stage": 10,
+      "tool_call": 17,
+      "markdown_ready": 1,
+      "invoice_extracted": 1,
+      "check_result": 16,
+      "verdict": 1
+    }
+  },
+  {
+    "file": "changed_bank.jsonl",
+    "doc_id": "INV-010",
+    "scenario": "The IBAN on the invoice differs from the one in the vendor master.",
+    "verdict": "MISMATCH",
+    "review_case_id": "RC-0004",
+    "events": 50,
+    "event_types": {
+      "stage": 12,
+      "tool_call": 18,
+      "markdown_ready": 1,
+      "invoice_extracted": 1,
+      "check_result": 16,
+      "llm_note": 1,
+      "verdict": 1
+    }
+  }
+]

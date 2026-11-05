@@ -114,7 +114,7 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 
 - [x] [TECH] Write `agent/schemas.py`: `DocumentInfo`, `Invoice` (with VAT lines per rate, VAT numbers, KvK number, IBAN), `Verdict`, `Event` (one model per event type), `AuditEntry`, `ReviewCase`, `EvalProgress`, `EvalReport`, `SystemStatus` (Invoice, Verdict, the 8 event types, AuditEntry, ReviewCase, EvalProgress, EvalReport, SystemStatus and DocumentInfo are written; the UI side still needs to review the field names.)
 - [x] [TECH] Write a `service.py` stub with these signatures that raises `NotImplementedError` (done as the real service: verify, documents, verdict, audit log and status work; case and eval functions raise `NotImplementedError` until Phases 5 and 6.)
-- [ ] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later
+- [x] [TECH] Hand-write 4 sample event streams in `fixtures/events/` (clean, duplicate with a changed IBAN, reverse-charge error, prompt injection), then replace them with real recordings later (Done as real recordings, not hand-written: `fixtures/events/` has 5 streams from the real model, an index, and a test that keeps them valid. The duplicate-with-changed-IBAN scenario is covered by two separate streams, `duplicate` and `changed_bank`; a single combined invoice is not in the 20.)
 - [ ] [UI] Write `ui/mock_service.py`: same functions, returns fixtures, and streams events with realistic delays
 
 ---
@@ -170,13 +170,13 @@ async def system_status() -> SystemStatus                    # Ollama up? which 
 ### Phase 6: Eval
 > **Starting point (one run, qwen3:8b, no model assessment):** 17 of 20 invoices got exactly the expected verdict. The other 3 are scans whose invoice date OCR could not read. Two of them were clean (`MATCHED` expected) and came back `NEEDS_REVIEW`; the third was the duplicate, which was caught but, before the verdict rule was refined to keep real findings, also came back `NEEDS_REVIEW` (it is now `MISMATCH`). Count a clean scan that returns `NEEDS_REVIEW` because a field was unreadable as a **safe fail**, reported separately from a wrong verdict. The agent must never turn an unreadable field into a confident `MATCHED`.
 
-- [ ] `eval/run_eval.py`: all 20 invoices × 3 runs. Per invoice: expected vs actual verdict, error caught, which check caught it, consistency across runs, seconds, tool calls
-- [ ] `run_eval()` in the service streams `EvalProgress` for the UI
-- [ ] Compare models: qwen3:8b against gpt-oss:20b and Qwen3-30B-A3B; save each run as an `EvalReport`
-- [ ] Fix the prompts and checks for any invoice that fails or flips between runs
+- [x] `eval/run_eval.py`: all 20 invoices × 3 runs. Per invoice: expected vs actual verdict, error caught, which check caught it, consistency across runs, seconds, tool calls
+- [x] `run_eval()` in the service streams `EvalProgress` for the UI
+- [ ] Compare models: qwen3:8b against gpt-oss:20b and Qwen3-30B-A3B; save each run as an `EvalReport` (Open: needs `ollama pull` of each model first, which is many gigabytes. Run `python eval/run_eval.py --model <name>` per model; each report is saved in `data/runs/eval/`.)
+- [x] Fix the prompts and checks for any invoice that fails or flips between runs (qwen3:8b: the first run failed every invoice because the model over-escalated clean invoices to NEEDS_REVIEW. Its suggestions are now advisory and labelled `(model)`; escalation is opt-in. After that: 18 of 20 pass, 2 safe fails, 0 fails, 20 of 20 consistent. See `eval/results/qwen3-8b.txt`.)
 
 ### Stretch [TECH]
-- [ ] MCP resources (`policy://verification-rules`, `schema://invoice`) and prompts
+- [x] MCP resources (`policy://verification-rules`, `schema://invoice`) and prompts (Done on the `tax_rules` server: `policy://verification-rules`, `schema://invoice` and a `review_findings` prompt.)
 - [ ] Elicitation for unclear vendor-name matches (needs a `answer_elicitation()` in the contract and an `elicitation` event)
 - [ ] Peppol / UBL XML invoices parsed directly in the documents server
 

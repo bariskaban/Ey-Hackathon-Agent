@@ -344,10 +344,15 @@ class EvalInvoiceResult(BaseModel):
     verdicts: list[VerdictStatus] = Field(description="One verdict per run")
     error_caught: list[bool] = Field(description="Whether the planted error was found, per run")
     caught_by: list[str] = Field(default_factory=list, description="Checks that failed")
-    consistent: bool
-    passed: bool
-    seconds: float
-    tool_calls: int
+    consistent: bool = Field(description="Every run gave the same verdict and the same findings")
+    outcome: Literal["pass", "safe_fail", "fail"] = Field(
+        description="pass: right verdict and error every run. safe_fail: a scan that could not be read "
+                    "was sent to a person instead of approved or rejected. fail: anything else.")
+    passed: bool = Field(description="outcome == 'pass'")
+    seconds: float = Field(description="Mean seconds per run")
+    tool_calls: int = Field(description="Mean tool calls per run")
+    scanned: bool = False
+    note: str | None = Field(None, description="Why an invoice did not pass, in one sentence")
 
 
 class EvalReport(BaseModel):
@@ -357,9 +362,12 @@ class EvalReport(BaseModel):
     runs_per_invoice: int
     invoices: list[EvalInvoiceResult]
     passed: int
+    safe_failed: int = 0
+    failed: int = 0
     total: int
     consistent: int
     mean_seconds: float
+    used_agent: bool = True
 
 
 class SystemStatus(BaseModel):

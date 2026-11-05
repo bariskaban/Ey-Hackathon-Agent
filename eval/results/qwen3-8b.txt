@@ -1,0 +1,27 @@
+model qwen3:8b   3 runs per invoice   with the model's assessment
+
+invoice  expected       results                              outcome    same    sec calls  caught by
+INV-001  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    31.4    15  po_amount_match
+INV-002  MATCHED        MATCHED,MATCHED,MATCHED              pass       yes    26.6    14  
+INV-003  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    28.8    15  amount_anomaly
+INV-004  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    32.1    14  vat_treatment
+INV-005  NOT_FOUND      NOT_FOUND,NOT_FOUND,NOT_FOUND        pass       yes    31.1    10  vendor_lookup
+INV-006  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    25.8    16  vat_number_valid
+INV-007  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    28.2    15  goods_receipt_match
+INV-008  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    36.7    15  already_paid
+INV-009  MATCHED        REVIEW,REVIEW,REVIEW                 safe_fail  yes    28.5    13  
+         -> sent to a person instead of guessing: these fields could not be read from the scan: invoice_date
+INV-010  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    29.0    16  bank_details
+INV-011  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    30.8    15  sanctions
+INV-012  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    29.1    15  mandatory_fields
+INV-013  MATCHED        MATCHED,MATCHED,MATCHED              pass       yes    29.6    16  
+INV-014  MATCHED        MATCHED,MATCHED,MATCHED              pass       yes    26.5    14  
+INV-015  MATCHED        MATCHED,MATCHED,MATCHED              pass       yes    29.2    15  
+INV-016  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    31.6    15  vat_rate
+INV-017  PARTIAL_MATCH  PARTIAL,PARTIAL,PARTIAL              pass       yes    32.5    15  invoice_math
+INV-018  NEEDS_REVIEW   REVIEW,REVIEW,REVIEW                 pass       yes    16.8    15  injection_scan
+INV-019  MATCHED        REVIEW,REVIEW,REVIEW                 safe_fail  yes    29.0    13  
+         -> sent to a person instead of guessing: these fields could not be read from the scan: invoice_date
+INV-020  MISMATCH       MISMATCH,MISMATCH,MISMATCH           pass       yes    30.8    13  duplicate_invoice
+
+pass 18/20   safe fail 2   fail 0   consistent across runs 20/20   mean 29.2s per run

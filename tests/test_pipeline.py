@@ -174,31 +174,51 @@ def test_decide_verdict(discrepancies, reasons, expected):
     assert checks.decide_verdict(discrepancies, reasons) == expected
 
 
-def test_the_model_can_escalate_but_never_lower_a_verdict(inbox, case):
-    """A clean MATCHED invoice becomes NEEDS_REVIEW if the model asks; a MISMATCH never becomes MATCHED."""
+def run_with_opinion(entry, *, escalate, reason="odd wording", flags=(), model_can_escalate=None):
+    """Run the pipeline with a scripted model opinion in place of the real model."""
     import agent.pipeline as p
 
-    async def opinion(escalate):
-        async def fake(*args, **kwargs):
-            return p.AgentOpinion(reasoning="looks fine", escalate_to_review=escalate, escalation_reason="odd wording")
-        return fake
+    async def fake(*args, **kwargs):
+        return p.AgentOpinion(reasoning="looks fine", escalate_to_review=escalate, escalation_reason=reason,
+                              risk_flags=list(flags))
 
-    def run_with(entry, escalate):
-        invoice_json = Invoice.model_validate(entry["expected_invoice"]).model_dump_json()
-        events = []
-        original = p.run_agent
-        p.run_agent = asyncio.run(opinion(escalate))
-        try:
-            with trusting_extraction():
-                return asyncio.run(p.verify_document(entry["invoice_id"], DirectGateway(), StubLLM(invoice_json),
-                                                     events.append, use_agent=True))
-        finally:
-            p.run_agent = original
+    invoice_json = Invoice.model_validate(entry["expected_invoice"]).model_dump_json()
+    original, p.run_agent = p.run_agent, fake
+    try:
+        with trusting_extraction():
+            return asyncio.run(p.verify_document(entry["invoice_id"], DirectGateway(), StubLLM(invoice_json), [].append,
+                                                 use_agent=True, model_can_escalate=model_can_escalate))
+    finally:
+        p.run_agent = original
 
-    clean, faulty = case("clean_standard"), case("wrong_amount")
-    assert run_with(clean, False).verdict == VerdictStatus.MATCHED
-    assert run_with(clean, True).verdict == VerdictStatus.NEEDS_REVIEW
-    assert run_with(faulty, False).verdict == VerdictStatus.MISMATCH  # "looks fine" does not lower it
+
+def test_the_models_suggestion_is_shown_but_does_not_change_the_verdict_by_default(inbox, case):
+    """A small model over-flags clean invoices; letting it downgrade them would make results inconsistent."""
+    verdict = run_with_opinion(case("clean_standard"), escalate=True, flags=["amount looks high"])
+    assert verdict.verdict == VerdictStatus.MATCHED and verdict.review_case_id is None
+    assert "(model) suggests a person look: odd wording" in verdict.risk_flags
+    assert "(model) amount looks high" in verdict.risk_flags  # labelled as the model's, not a check result
+
+
+def test_the_model_can_raise_a_verdict_to_needs_review_only_when_allowed_and_with_a_reason(inbox, case):
+    clean = case("clean_standard")
+    assert run_with_opinion(clean, escalate=True, model_can_escalate=True).verdict == VerdictStatus.NEEDS_REVIEW
+    no_reason = run_with_opinion(clean, escalate=True, reason="", model_can_escalate=True)
+    assert no_reason.verdict == VerdictStatus.MATCHED  # an escalation without a reason is ignored
+    assert run_with_opinion(clean, escalate=False, model_can_escalate=True).verdict == VerdictStatus.MATCHED
+
+
+def test_the_model_can_never_lower_a_verdict(inbox, case):
+    for allowed in (False, True):
+        verdict = run_with_opinion(case("wrong_amount"), escalate=False, model_can_escalate=allowed)
+        assert verdict.verdict == VerdictStatus.MISMATCH  # "looks fine" does not lower it
+
+
+def test_escalation_can_be_switched_on_from_the_environment(inbox, case, monkeypatch):
+    monkeypatch.setenv("INVOICE_MODEL_CAN_ESCALATE", "1")
+    assert run_with_opinion(case("clean_standard"), escalate=True).verdict == VerdictStatus.NEEDS_REVIEW
+    monkeypatch.setenv("INVOICE_MODEL_CAN_ESCALATE", "0")
+    assert run_with_opinion(case("clean_standard"), escalate=True).verdict == VerdictStatus.MATCHED
 
 
 def test_pipeline_is_quick_without_the_model(inbox, case):
