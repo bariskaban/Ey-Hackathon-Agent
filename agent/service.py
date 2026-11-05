@@ -12,7 +12,7 @@ from pathlib import Path
 
 from pydantic import TypeAdapter
 
-from agent import pipeline
+from agent import evaluation, pipeline
 from agent.gateway import Gateway
 from agent.llm import LLM
 from agent.schemas import (
@@ -220,10 +220,34 @@ async def export_evidence_pack(case_id: str, fmt: str = "pdf") -> Path:
     return DATA_DIR / review_case_tools.export_evidence_pack(case_id, fmt)["path"]
 
 
-async def run_eval(model: str, runs_per_invoice: int = 3) -> AsyncIterator[EvalProgress]:
-    raise NotImplementedError("the evaluation runner is Phase 6")
-    yield  # pragma: no cover  (makes this an async generator, as the contract says)
+def _eval_dir() -> Path:
+    folder = _runs_dir() / "eval"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+async def run_eval(model: str, runs_per_invoice: int = 3, *, doc_ids: list[str] | None = None,
+                   use_agent: bool = True) -> AsyncIterator[EvalProgress]:
+    """Verify every test invoice `runs_per_invoice` times with `model` and stream progress.
+
+    The last item has finished=True; the full report is then in `list_eval_runs()`. Evaluation never opens
+    review cases and never overwrites the recorded runs shown in the UI.
+    """
+    gateway, _ = await _runtime.get()
+    llm = LLM(model=model)
+    last: EvalProgress | None = None
+    async for item in evaluation.run_evaluation(gateway, llm, runs_per_invoice, doc_ids=doc_ids,
+                                                use_agent=use_agent):
+        if isinstance(item, EvalReport):
+            (_eval_dir() / f"{item.run_id}.json").write_text(item.model_dump_json(indent=2), encoding="utf-8")
+            yield EvalProgress(run_id=item.run_id, model=item.model, completed=last.total if last else 0,
+                               total=last.total if last else 0, finished=True)
+        else:
+            last = item
+            yield item
 
 
 async def list_eval_runs() -> list[EvalReport]:
-    raise NotImplementedError("the evaluation runner is Phase 6")
+    """Saved evaluation reports, newest first."""
+    reports = [EvalReport.model_validate_json(f.read_text(encoding="utf-8")) for f in _eval_dir().glob("*.json")]
+    return sorted(reports, key=lambda r: (r.created_at, r.run_id), reverse=True)

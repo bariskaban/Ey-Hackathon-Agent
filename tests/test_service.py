@@ -96,14 +96,3 @@ def test_upload_accepts_a_valid_pdf_and_rejects_the_rest(inbox):
     assert traversal.filename == "outside.pdf" and not (manifest.inbox_dir().parent.parent / "outside.pdf").exists()
     assert service.get_document_file("INV-777").parent == manifest.inbox_dir().resolve()
     assert not (manifest.inbox_dir() / "notes.txt").exists()
-
-
-def test_the_evaluation_runner_is_not_built_yet():
-    async def scenario():
-        with pytest.raises(NotImplementedError):
-            await service.list_eval_runs()
-        with pytest.raises(NotImplementedError):
-            async for _ in service.run_eval("qwen3:8b"):
-                pass
-
-    asyncio.run(scenario())

@@ -2,8 +2,8 @@
 
 Each check calls MCP tools through the gateway and returns a CheckOutcome: one CheckResult plus
 any discrepancies and evidence. The verdict is then decided by `decide_verdict` from fixed rules,
-so the same invoice gives the same verdict on every run. The language model may add reasoning and
-may escalate to NEEDS_REVIEW, but it can never lower a verdict.
+so the same invoice gives the same verdict on every run. The language model adds reasoning and
+suggestions; it can never lower a verdict (and raising one is opt-in, see agent/pipeline.py).
 """
 
 import re

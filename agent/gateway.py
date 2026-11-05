@@ -119,6 +119,10 @@ class Gateway:
             }})
         return result
 
+    def reset_budget(self, invoice_id: str | None) -> None:
+        """Start a fresh budget. The budget limits one verification run, so each run begins with a new one."""
+        self._budgets.pop(invoice_id or "_none", None)
+
     def budget(self, invoice_id: str | None) -> Budget:
         key = invoice_id or "_none"
         if key not in self._budgets:
