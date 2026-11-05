@@ -97,6 +97,10 @@ class Gateway:
     def tool_names(self) -> list[str]:
         return sorted(self._tools)
 
+    def tool_servers(self) -> set[str]:
+        """Names of the servers that are running (those that provided at least one tool)."""
+        return {entry.server for entry in self._tools.values()}
+
     def server_of(self, tool: str) -> str | None:
         entry = self._tools.get(tool)
         return entry.server if entry else None

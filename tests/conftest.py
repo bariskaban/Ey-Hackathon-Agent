@@ -6,6 +6,7 @@ config module reads them at import time. The MCP servers started by the gateway 
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -34,3 +35,22 @@ def case(ground_truth):
     """Look up the test invoice for a planted-error case, e.g. case('duplicate')."""
     by_case = {g["case"]: g for g in ground_truth}
     return lambda key: by_case[key]
+
+
+@pytest.fixture(scope="session")
+def inbox(ground_truth):
+    """Render the 20 invoice PDFs into the test data folder and put them in a test inbox."""
+    from servers.documents import manifest
+
+    subprocess.run([sys.executable, str(ROOT / "data" / "render_pdfs.py")], check=True, cwd=ROOT,
+                   stdout=subprocess.DEVNULL)
+    folder = _DATA_DIR / "inbox"
+    folder.mkdir()
+    for entry in ground_truth:
+        shutil.copy2(_DATA_DIR / "invoices" / entry["file"], folder / entry["file"])
+    os.environ["INVOICE_INBOX_DIR"] = str(folder)
+    os.environ["INVOICE_CACHE_DIR"] = str(_DATA_DIR / "cache")
+    result = manifest.sync_inbox()
+    yield folder, result
+    os.environ.pop("INVOICE_INBOX_DIR")
+    os.environ.pop("INVOICE_CACHE_DIR")
