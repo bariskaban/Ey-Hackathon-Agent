@@ -41,6 +41,11 @@ INJECTION_PATTERNS = [
     r"(?:system|developer)\s+prompt",
     r"you\s+are\s+(?:now\s+)?(?:an?\s+)?(?:ai|assistant|language model)",
     r"already\s+(?:been\s+)?(?:verified|approved)\s+by",
+    # other wordings: addressed to "automated reviewers", telling the reader what verdict to give or what to skip
+    r"(?:instruction|message|note|notice|attention)s?\s+(?:to|for)\s+(?:the\s+)?(?:automated|automatic)\s+\w+",
+    r"\b(?:report|return|output|set|give|mark|record|classify)\b[^.\n]{0,40}\b(?:verdict|status|result)\b[^.\n]{0,30}\b(?:matched|approved|verified|valid|clean)\b",
+    r"\bskip\s+(?:all\s+|every\s+|any\s+|the\s+|further\s+)*(?:checks?|verification|validation|review)",
+    r"\bpre-?approved\s+by\b",
 ]
 INJECTION_RE = re.compile("|".join(f"(?:{p})" for p in INJECTION_PATTERNS), re.IGNORECASE)
 

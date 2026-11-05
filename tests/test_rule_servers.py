@@ -1,11 +1,13 @@
 """tax_rules, vendor_checks and anomaly_stats: the fixed-rule tools."""
 
 import copy
+import json
 import sqlite3
 
 import pytest
 
 from servers.anomaly_stats import tools as anomaly
+from servers.common.config import INVOICES_DIR
 from servers.common.db import writable
 from servers.tax_rules import tools as tax
 from servers.vendor_checks import tools as vendors
@@ -168,8 +170,13 @@ def test_sanctions_screening_finds_the_variant_and_not_the_innocent(case):
     result = vendors.screen_sanctions(planted)
     assert result["match_count"] >= 1 and result["matches"][0]["listed_name"] == "Northern Star Maritime Holdings"
     assert result["matches"][0]["score"] >= 85 and "never rejects" in result["note"]
+    # the sample invoices plant a second sanctioned vendor, on purpose
+    samples = json.loads((INVOICES_DIR / "sample_ground_truth.json").read_text(encoding="utf-8"))
+    planted_names = {planted} | {s["expected_invoice"]["supplier"]["name"] for s in samples
+                                 if s["slug"] == "sanctioned-vendor"}
+    assert vendors.screen_sanctions("Volga Steel Exports B.V.")["match_count"] >= 1
     for vendor in all_vendors():
-        if vendor["name"] != planted:
+        if vendor["name"] not in planted_names:
             assert vendors.screen_sanctions(vendor["name"])["match_count"] == 0, vendor["name"]
     assert vendors.screen_sanctions("Rijnmond Kantoorwaren B.V.")["match_count"] == 0
 

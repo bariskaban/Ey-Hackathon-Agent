@@ -15,6 +15,7 @@ The whole workflow is in English: invoices, prompts, tool output and the interfa
 - [Hidden pages](#hidden-pages)
 - [Configuration](#configuration)
 - [Data and test invoices](#data-and-test-invoices)
+- [Sample invoices for stress testing](#sample-invoices-for-stress-testing)
 - [Evaluation](#evaluation)
 - [Tests and code checks](#tests-and-code-checks)
 - [Inspecting the MCP servers](#inspecting-the-mcp-servers)
@@ -193,7 +194,7 @@ To have invoices to upload by hand, also run:
 python scripts/make_samples.py
 ```
 
-It copies seven of the test invoices to `samples/` under descriptive names (`sample-clean-text-pdf.pdf`, `sample-wrong-amount.pdf`, `sample-changed-bank-details.pdf`, `sample-prompt-injection.pdf` and so on). They are not in the inbox, so you can upload them yourself.
+It makes 30 sample invoices in `samples/` (see [Sample invoices](#sample-invoices-for-stress-testing)). They are not in the inbox, so you can upload them yourself.
 
 ### 6. Run
 
@@ -296,6 +297,23 @@ There are 20 test invoices: 6 clean and 14 with one planted error each. `data/in
 | 018 | Prompt injection |
 | 020 | Duplicate invoice |
 
+## Sample invoices for stress testing
+
+Real invoices do not look alike, so neither do these. `python scripts/make_samples.py` writes 30 invoices to `samples/` (git-ignored) and an `answer-key.md` that says what each one should give. Every one is built differently:
+
+- **Eleven document structures:** a classic letter, a sidebar, a banner header, a minimal page, a ruled form, a two-page letter with terms and a tear-off remittance slip, a landscape sheet, a dense page that puts the total first, a typewriter printout, a stamped copy and a narrow till-roll receipt.
+- **A drawn logo and company details for each supplier**, with its own colours, tagline and name style.
+- **Different wording:** "Invoice", "Tax invoice" or "Sales invoice"; "Invoice number", "Doc #" or "No."; "Amount due" or "Gross total"; four different sets of column names, and some invoices leave out the item-code or VAT-rate column.
+- **Different formats:** `EUR 1,234.56`, `€1,234.56`, `€ 1.234,56`, `1,234.56 EUR` and plain `1234.56`; six date styles (`2026-10-21`, `21 Oct 2026`, `21/10/2026`, `21.10.2026`, `October 21, 2026`, `21-10-2026`).
+- **Different kinds of file:** PDFs with text, scanned PDFs, a poor scan, a fax, a phone photo taken at an angle, a scanned JPG and clean PNG screenshots. Two carry a watermark ("COPY", "ORIGINAL").
+
+| | Count | What |
+|---|---|---|
+| Clean | 10 | Should be `Matched`: domestic and reverse-charge (Germany, Belgium), mixed 9% and 21% rates, books, a freight line, several lines |
+| Faulty | 20 | Every one of the 14 planted errors at least once, including a prompt injection hidden in white text and a large invoice dated on a Saturday, plus one invoice with two problems at once |
+
+The first seven show the same data as seven of the 20 test invoices, in new designs. The other 23 are new invoices with their own purchase orders, receipts and payments in the database, so if your database is older than this feature, run `python data/generate.py` once more (it rebuilds `data/db.sqlite` and so clears any review cases you created). The invoice data for the 23 is in `data/invoices/sample_ground_truth.json`, and the drawing code is in `data/render_samples.py`.
+
 ## Evaluation
 
 The evaluation verifies every test invoice several times and compares each result with the known answer.
@@ -335,7 +353,7 @@ python -m pytest
 python -m ruff check .
 ```
 
-The tests build their own temporary dataset, so they never touch `data/db.sqlite`, and they use a stub in place of the language model, so they need no Ollama. They start the real MCP servers, so Tesseract must be installed. A full run takes about two minutes. They cover the gateway and its allowlists, every server tool, the extraction and the agent loop, the verification pipeline, review cases and evidence packs, the evaluation, the service the interface uses (including replay), the highlighting (including that the original file is never changed), and that the recorded event streams in `tests/recorded_events/` always match the event contract.
+The tests build their own temporary dataset, so they never touch `data/db.sqlite`, and they use a stub in place of the language model, so they need no Ollama. They start the real MCP servers, so Tesseract must be installed. A full run takes about two minutes. They cover the gateway and its allowlists, every server tool, the extraction and the agent loop, the verification pipeline, review cases and evidence packs, the evaluation, the service the interface uses (including replay), the highlighting (including that the original file is never changed), the 30 sample invoices, and that the recorded event streams in `tests/recorded_events/` always match the event contract.
 
 ## Inspecting the MCP servers
 
@@ -354,9 +372,9 @@ This starts all six over HTTP (ports 8101 to 8106, each at `/mcp`). Connect with
 | `agent/` | The agent: `service.py` (the contract the interface uses), `pipeline.py` (a verification run), `checks.py` (the 16 fixed checks), `extract.py`, `llm.py` and `loop.py` (Ollama and the tool loop), `gateway.py` (allowlists, budget, audit), `roles.py`, `schemas.py` (every model and event), `evaluation.py` |
 | `servers/` | The six MCP servers, plus `common/` (masking, row caps, database access, audit writer) and `registry.py` |
 | `ui/` | The NiceGUI interface: `main.py`, `theme.py` and `static/vera.css` (design), `pages/`, `components/`, `real_service.py` (shapes the agent's answers for the pages), `highlights.py` (boxes on the document) |
-| `data/` | Generators for the synthetic data (`generate.py`, `render_pdfs.py`, `reference.py`, `schema.sql`) and the 20 test invoices; the generated database, inbox and run files are git-ignored |
+| `data/` | Generators for the synthetic data (`generate.py`, `render_pdfs.py`, `render_samples.py`, `reference.py`, `schema.sql`) and the 20 test invoices, plus the data of the 23 extra sample invoices; the generated database, inbox and run files are git-ignored |
 | `eval/` | The evaluation and extraction-accuracy scripts, and the saved results |
-| `scripts/` | `load_inbox.py`, `make_samples.py`, `start_servers.py` |
+| `scripts/` | `load_inbox.py`, `make_samples.py` (the 30 differently designed samples), `start_servers.py` |
 | `tests/` | The test suite and the recorded event streams |
 | `CLAUDE.md` | Working agreements for contributors |
 
@@ -367,6 +385,7 @@ This starts all six over HTTP (ports 8101 to 8106, each at `/mcp`). Connect with
 | The status chip says **Ollama is not running** | Start Ollama and check `ollama list` shows `qwen3:8b`. In WSL, keep a WSL terminal open. Set `OLLAMA_HOST` if it is on another address. |
 | Scans are not read, or OCR errors appear | Check `tesseract --list-langs` lists `eng`. If Tesseract is not on `PATH`, set `INVOICE_TESSERACT_CMD`. |
 | The inbox is empty | Run `python data/generate.py`, `python data/render_pdfs.py` and `python scripts/load_inbox.py`. |
+| A sample says the purchase order or vendor is unknown | Your database is older than the samples. Run `python data/generate.py` again. |
 | **Address already in use** on port 8080 | Another copy is running. Stop it, or set `PORT`. |
 | A run says there is no recording | Replay needs an earlier run of that invoice. Verify it once live. |
 | No boxes on a verdict | The text could not be found on the page, for example when the model misread a value. The discrepancy is still listed. |
