@@ -96,3 +96,18 @@ def test_upload_accepts_a_valid_pdf_and_rejects_the_rest(inbox):
     assert traversal.filename == "outside.pdf" and not (manifest.inbox_dir().parent.parent / "outside.pdf").exists()
     assert service.get_document_file("INV-777").parent == manifest.inbox_dir().resolve()
     assert not (manifest.inbox_dir() / "notes.txt").exists()
+
+
+def test_upload_never_replaces_or_deletes_an_existing_document(inbox):
+    pdf = (INVOICES_DIR / "INV-001.pdf").read_bytes()
+
+    async def scenario():
+        await service.upload_document("INV-778.pdf", pdf)
+        for bad in (b"not a pdf", pdf + b"\n%extra"):  # one rejected, one that would be valid
+            with pytest.raises(ValueError, match="already in the inbox"):
+                await service.upload_document("INV-778.pdf", bad)
+
+    asyncio.run(scenario())
+    kept = manifest.inbox_dir() / "INV-778.pdf"
+    assert kept.read_bytes() == pdf
+    assert "INV-778" in manifest.load()["documents"]
