@@ -181,12 +181,12 @@ The company records and the 20 test invoices are generated, not downloaded, and 
 ```bash
 python data/generate.py
 python data/render_pdfs.py
-python scripts/load_inbox.py
 ```
 
 - `generate.py` writes `data/db.sqlite` (about 30 vendors, purchase orders, receipts, about 2,000 past transactions and the reference tables) and the invoice specs.
 - `render_pdfs.py` renders the 20 invoices as PDFs in `data/invoices/`. Five are "scanned" (image only, slightly rotated and noisy) to exercise OCR.
-- `load_inbox.py` copies them into the inbox (`data/inbox/`), where documents wait to be verified.
+
+The inbox (`data/inbox/`) starts empty, as it would for a new user: upload your own invoices in the interface. The 20 test invoices stay in `data/invoices/` for the evaluation, which copies them into a private temporary inbox and never touches yours. To put them in the inbox anyway (for example for the [demo page](#demo-the-demo-script)), run `python scripts/load_inbox.py`.
 
 To have invoices to upload by hand, also run:
 
@@ -228,7 +228,7 @@ Two pages are left out of the menu on purpose. They are for the team and for pre
 
 <http://localhost:8080/demo>
 
-One card for each step of the demo, in order, each opening the right invoice and starting it:
+It needs the 20 test invoices in the inbox (`python scripts/load_inbox.py`). One card for each step of the demo, in order, each opening the right invoice and starting it:
 
 | Step | Invoice | Shows |
 |---|---|---|
@@ -339,7 +339,7 @@ The evaluation verifies every test invoice several times and compares each resul
 python eval/run_eval.py
 ```
 
-It needs Ollama running and the inbox loaded. By default it runs all 20 invoices 3 times each (about 30 minutes) and prints a table: expected against actual verdict, whether the planted error was caught and by which check, whether the runs agreed, and the time and tool calls per run.
+It needs Ollama running. It does not use your inbox: it copies the 20 test invoices into a private temporary one for the run. By default it runs all 20 invoices 3 times each (about 30 minutes) and prints a table: expected against actual verdict, whether the planted error was caught and by which check, whether the runs agreed, and the time and tool calls per run.
 
 Each result is `pass`, `safe_fail` or `fail`. A **safe fail** is a scan whose key field could not be read and that was therefore sent to a person instead of being approved or rejected. It is counted separately from a wrong answer.
 
@@ -407,13 +407,13 @@ This starts all six over HTTP (ports 8101 to 8106, each at `/mcp`). Connect with
 |---|---|
 | The status chip says **Ollama is not running** | Start Ollama and check `ollama list` shows `qwen3:8b`. In WSL, keep a WSL terminal open. Set `OLLAMA_HOST` if it is on another address. |
 | Scans are not read, or OCR errors appear | Check `tesseract --list-langs` lists `eng`. If Tesseract is not on `PATH`, set `INVOICE_TESSERACT_CMD`. |
-| The inbox is empty | Run `python data/generate.py`, `python data/render_pdfs.py` and `python scripts/load_inbox.py`. |
+| The inbox is empty | That is the normal start: upload invoices, or run `python scripts/load_inbox.py` to add the 20 test invoices. |
 | A sample says the purchase order or vendor is unknown | Your database is older than the samples. Run `python data/generate.py` again. |
 | **Address already in use** on port 8080 | Another copy is running. Stop it, or set `PORT`. |
 | A run says there is no recording | Replay needs an earlier run of that invoice. Verify it once live. |
 | No boxes on a verdict | The text could not be found on the page, for example when the model misread a value. The discrepancy is still listed. |
 | Verification is slow | The model runs on the CPU. Use a GPU, or use recordings in the demo. |
-| Want a clean start | Stop Vera and delete `data/db.sqlite`, `data/runs/`, `data/audit.jsonl`, `data/cache/` and `data/outbox/`, then generate the data again. |
+| Want a clean start | Stop Vera and delete `data/db.sqlite`, `data/runs/`, `data/audit.jsonl`, `data/cache/` and `data/outbox/`, then run `python data/generate.py` again. The inbox (`data/inbox/`) is also cleared if you want it empty. |
 
 ## Contributing
 

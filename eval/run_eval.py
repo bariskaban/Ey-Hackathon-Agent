@@ -5,8 +5,8 @@
     python eval/run_eval.py --runs 1 --no-agent   # quick check: one run, no model assessment
     python eval/run_eval.py INV-004 INV-018       # selected invoices
 
-Needs the data (data/generate.py, data/render_pdfs.py), the inbox (scripts/load_inbox.py) and Ollama
-running. Each run is saved to data/runs/eval/ and can be listed with agent.service.list_eval_runs().
+Needs the data (data/generate.py, data/render_pdfs.py) and Ollama running. The 20 invoices are copied into a
+private temporary inbox, so your own inbox is not used or changed. Each run is saved to data/runs/eval/ and can be listed with agent.service.list_eval_runs().
 Evaluation never opens review cases.
 """
 

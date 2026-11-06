@@ -57,6 +57,7 @@ class Gateway:
     max_calls: int = DEFAULT_MAX_CALLS
     max_rows: int = DEFAULT_MAX_ROWS
     server_names: list[str] | None = None  # default: every server that is built
+    env: dict[str, str] | None = None  # extra INVOICE_* settings for the servers, e.g. a private inbox
 
     def __post_init__(self):
         self._stack: AsyncExitStack | None = None
@@ -67,7 +68,7 @@ class Gateway:
 
     async def start(self) -> "Gateway":
         self._stack = AsyncExitStack()
-        env = {k: v for k, v in os.environ.items() if k.startswith("INVOICE_")}
+        env = {k: v for k, v in os.environ.items() if k.startswith("INVOICE_")} | (self.env or {})
         for name, info in built_servers().items():
             if self.server_names is not None and name not in self.server_names:
                 continue
