@@ -326,6 +326,10 @@ These samples found and led to fixes for: Dutch-style amounts (`4.304,47`) and d
 
 The first seven show the same data as seven of the 20 test invoices, in new designs. The other 23 are new invoices with their own purchase orders, receipts and payments in the database, so if your database is older than this feature, run `python data/generate.py` once more (it rebuilds `data/db.sqlite` and so clears any review cases you created). The invoice data for the 23 is in `data/invoices/sample_ground_truth.json`, and the drawing code is in `data/render_samples.py`.
 
+### A held-out check
+
+Fixing what the samples showed makes them a training set, so their score flatters the system. `python eval/heldout.py <out.json>` builds 24 new invoices (new layouts, wording, number and date styles, error variations and injection wordings) in a throwaway folder and verifies them through the agent. Do not tune the checks on them; make a new batch when you need a fresh test. The latest result, with every miss explained, is in `eval/results/heldout.txt`: **17 of 24**. New variations of every error are caught (13 of 14), but clean invoices are flagged too often (2 of 6, partly because of model extraction errors and partly flaws in the batch itself), and the injection scan caught only 1 of 4 new wordings.
+
 ## Evaluation
 
 The evaluation verifies every test invoice several times and compares each result with the known answer.
