@@ -54,6 +54,18 @@ EXPECTED_CHECKS = {
 }
 
 _running: set[str] = set()
+_queued: set[str] = set()  # waiting for "Verify all" to reach them
+
+
+class _Live:
+    """The events of a run in progress, kept so that any page can follow it from the start."""
+
+    def __init__(self) -> None:
+        self.events: list[Any] = []
+        self.done = False
+
+
+_live: dict[str, _Live] = {}
 
 
 def _ns(x: Any) -> Any:
@@ -257,7 +269,8 @@ def _document(info) -> dict:
         verdict = backend._verdict_path(info.doc_id)
         verdict = Verdict.model_validate_json(verdict.read_text(encoding="utf-8")) if verdict.exists() else None
     invoice = run.invoice
-    status = "VERIFYING" if info.doc_id in _running else "VERIFIED" if verdict else "NOT_VERIFIED"
+    status = ("VERIFYING" if info.doc_id in _running else "QUEUED" if info.doc_id in _queued
+              else "VERIFIED" if verdict else "NOT_VERIFIED")
     return {
         "doc_id": info.doc_id, "filename": info.filename, "mime_type": info.type, "size_bytes": info.size_bytes,
         "pages": info.pages, "read_method": run.method,
@@ -310,15 +323,52 @@ def _event_view(event, run_events: list) -> dict:
     return data
 
 
+def queue_documents(doc_ids: list[str]) -> None:
+    """Mark documents as waiting for a batch run, so no page offers to verify them in the meantime."""
+    _queued.update(doc_ids)
+
+
+def unqueue_documents(doc_ids: list[str]) -> None:
+    _queued.difference_update(doc_ids)
+
+
+async def watch(doc_id: str, poll: float = 0.1) -> AsyncIterator[Any]:
+    """Follow a run that is already in progress: every event so far, then the new ones until it ends.
+    Nothing is started. Yields nothing if the document is not being verified."""
+    live = _live.get(doc_id)
+    if live is None:
+        return
+    seen = 0
+    while True:
+        while seen < len(live.events):
+            yield live.events[seen]
+            seen += 1
+        if live.done:
+            return
+        await asyncio.sleep(poll)
+
+
 async def verify(doc_id: str) -> AsyncIterator[Any]:
-    """Stream the backend's events, renamed for the pages. The last one is the verdict (or an error)."""
+    """Stream the backend's events, renamed for the pages. The last one is the verdict (or an error).
+
+    A document that is already being verified (by the batch, or in another tab) is followed, not run twice."""
+    if doc_id in _live:
+        async for view in watch(doc_id):
+            yield view
+        return
+    live = _live[doc_id] = _Live()
+    _queued.discard(doc_id)
     _running.add(doc_id)
     seen: list = []
     try:
         async for event in backend.verify(doc_id):
             seen.append(event)
-            yield _ns(_event_view(event, seen))
+            view = _ns(_event_view(event, seen))
+            live.events.append(view)
+            yield view
     finally:
+        live.done = True
+        _live.pop(doc_id, None)
         _running.discard(doc_id)
 
 
