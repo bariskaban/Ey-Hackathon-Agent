@@ -281,6 +281,12 @@ async def upload_document(filename: str, data: bytes) -> Any:
     return _ns(_document(await backend.upload_document(filename, data)))
 
 
+async def delete_document(doc_id: str) -> None:
+    if doc_id in _running:
+        raise ValueError(f"{doc_id} is being verified right now. Wait for it to finish, or cancel it, then delete it.")
+    await backend.delete_document(doc_id)
+
+
 def get_document_file(doc_id: str) -> Path:
     return backend.get_document_file(doc_id)
 

@@ -111,3 +111,25 @@ def test_upload_never_replaces_or_deletes_an_existing_document(inbox):
     kept = manifest.inbox_dir() / "INV-778.pdf"
     assert kept.read_bytes() == pdf
     assert "INV-778" in manifest.load()["documents"]
+
+
+def test_deleting_a_document_removes_it_and_its_run_so_it_can_be_uploaded_again(inbox):
+    pdf = (INVOICES_DIR / "INV-001.pdf").read_bytes()
+
+    async def scenario():
+        uploaded = await service.upload_document("INV-779.pdf", pdf)
+        runs = service._runs_dir()
+        (runs / "INV-779.jsonl").write_text("", encoding="utf-8")  # stand-ins for what a verification leaves behind
+        (runs / "INV-779.verdict.json").write_text("{}", encoding="utf-8")
+        await service.delete_document(uploaded.doc_id)
+        with pytest.raises(ValueError, match="unknown doc_id"):
+            await service.delete_document("INV-779")
+        with pytest.raises(ValueError, match="doc_id must be an id"):
+            await service.delete_document("../../etc/passwd")
+        return await service.upload_document("INV-779.pdf", pdf), runs
+
+    again, runs = asyncio.run(scenario())
+    assert again.doc_id == "INV-779" and again.verdict is None
+    assert not (runs / "INV-779.jsonl").exists() and not (runs / "INV-779.verdict.json").exists()
+    asyncio.run(service.delete_document("INV-779"))
+    assert "INV-779" not in manifest.load()["documents"] and not (manifest.inbox_dir() / "INV-779.pdf").exists()

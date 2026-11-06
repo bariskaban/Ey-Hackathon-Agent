@@ -29,7 +29,7 @@ from agent.schemas import (
     Verdict,
 )
 from servers.common import audit
-from servers.common.config import DATA_DIR, INVOICES_DIR, RUNS_DIR, db_path
+from servers.common.config import DATA_DIR, INVOICES_DIR, OUTBOX_DIR, RUNS_DIR, db_path
 from servers.common.db import read_only, writable
 from servers.documents import manifest
 from servers.documents.convert import find_tesseract
@@ -118,6 +118,20 @@ async def upload_document(filename: str, data: bytes) -> DocumentInfo:
         raise ValueError(f"{name} was not accepted: {rejected['reason']}")
     raw = next(d for d in result["documents"].values() if d["filename"] == name)
     return _doc_info(raw)
+
+
+async def delete_document(doc_id: str) -> None:
+    """Remove a document from the inbox so it can be uploaded and verified again from scratch.
+
+    Deleted with it: the file, its recorded run, its verdict and its annotated copy. Kept on purpose:
+    the audit log and any review case, which are append-only records of what was seen and decided.
+    A review case that is still open gets a note instead of a second case when the document is verified again.
+    """
+    path = manifest.resolve(doc_id)[1]  # only a known doc_id is accepted, never a path
+    path.unlink(missing_ok=True)
+    manifest.sync_inbox()
+    for leftover in (_runs_dir() / f"{doc_id}.jsonl", _verdict_path(doc_id), OUTBOX_DIR / f"{doc_id}-annotated.pdf"):
+        leftover.unlink(missing_ok=True)
 
 
 def get_document_file(doc_id: str) -> Path:

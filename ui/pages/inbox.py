@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,8 @@ from ui.theme import (
 ALLOWED = (".pdf", ".png", ".jpg", ".jpeg")
 MAX_MB = 10
 MAX_FLAGS_SHOWN = 2
+MAX_FAILURES_SHOWN = 3  # failed files named in the one summary message of an upload
+UPLOAD_QUIET_SECONDS = 0.8  # an upload batch is reported once no file has arrived for this long
 STATUS_ICONS = {"VERIFIED": "✓", "VERIFYING": "↻", "QUEUED": "…", "NOT_VERIFIED": "–"}
 _batch: dict[str, Any] = {"running": False, "current": None, "index": 0, "total": 0, "done": 0, "task": None}
 
@@ -64,7 +67,8 @@ COLUMNS: list[dict[str, Any]] = [
     {"headerName": "Status", "field": "status_html", "width": 150, ":comparator": _cmp("status_sort"), "html": True},
     {"headerName": "Verdict", "field": "verdict_html", "width": 190, ":comparator": _cmp("verdict_sort"), "html": True},
     {"headerName": "Risk flags", "field": "flags_html", "width": 300, ":comparator": _cmp("flags_sort"), "html": True},
-    {"headerName": "Action", "field": "action_html", "width": 120, "sortable": False, "html": True},
+    {"headerName": "Action", "field": "action_html", "width": 110, "sortable": False, "html": True, "pinned": "right"},
+    {"headerName": "Delete", "field": "delete_html", "width": 100, "sortable": False, "html": True, "pinned": "right"},
 ]
 HTML_COLUMNS = [i for i, c in enumerate(COLUMNS) if c.pop("html", False)]
 
@@ -108,6 +112,7 @@ def _row(d: Any) -> dict[str, Any]:
         amount_num = -1.0
     return {
         "doc_id": d.doc_id,
+        "filename": d.filename,
         "doc_html": (f'<div class="vr-stack"><span class="vr-num" style="font-weight:500">{esc(d.doc_id)}</span>'
                      f'<span class="vr-small" title="{esc(d.filename)}">{esc(d.filename)}</span></div>'),
         "vendor_html": f'<div class="vr-stack"><span title="{esc(vendor)}">{esc(vendor)}</span>{country}</div>',
@@ -123,6 +128,8 @@ def _row(d: Any) -> dict[str, Any]:
         "flags_html": _flags_html(d, st),
         "flags_sort": ",".join(key(f) or "" for f in (getattr(d, "risk_flags", None) or [])) or "~",
         "action_html": _action_html(d.doc_id, st),
+        "delete_html": (f'<button type="button" class="vr-btn vr-btn-small" aria-label="Delete {esc(d.doc_id)}">'
+                        'Delete</button>'),
     }
 
 
@@ -158,37 +165,61 @@ async def inbox_page() -> None:
     with shell("inbox", status, await open_case_count()):
         header = ui.element("div").classes("vr-header")
 
+        # Uploading many files at once calls on_upload once per file. Each file is noted here and the
+        # whole batch is reported in one message, so 30 files never mean 30 toasts or 30 page refreshes.
+        report: dict[str, Any] = {"added": [], "failed": [], "last": 0.0}
+
+        def note(kind: str, message: str) -> None:
+            report[kind].append(message)
+            report["last"] = time.monotonic()
+
         async def on_upload(e) -> None:
             name = Path(e.file.name if hasattr(e, "file") else e.name).name
             try:
                 data = await e.file.read() if hasattr(e, "file") else e.content.read()
                 if not name.lower().endswith(ALLOWED):
-                    ui.notify(f"{name} was not added: only PDF, PNG and JPG files are accepted.", type="negative")
+                    note("failed", f"{name} was not added: only PDF, PNG and JPG files are accepted.")
                     return
                 if len(data) > MAX_MB * 1024 * 1024:
-                    ui.notify(f"{name} was not added: it is larger than {MAX_MB} MB. Compress it or split it, then try again.",
-                              type="negative")
+                    note("failed", f"{name} was not added: it is larger than {MAX_MB} MB. "
+                                   "Compress it or split it, then try again.")
                     return
                 if not data:
-                    ui.notify(f"{name} was not added: the file is empty. Choose a file that opens on your computer.",
-                              type="negative")
+                    note("failed", f"{name} was not added: the file is empty. Choose a file that opens on your computer.")
                     return
                 doc = await svc.upload_document(name, data)
             except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
-                ui.notify(f"{name} was not added: {exc}. Try again, or choose a different file.", type="negative")
+                note("failed", f"{name} was not added: {exc}. Try again, or choose a different file.")
                 return
-            ui.notify(f"Added {name} as {doc.doc_id}.", type="positive")
-            await refresh_all()
+            note("added", f"Added {name} as {doc.doc_id}.")
+
+        async def report_uploads() -> None:
+            """Tell the user how the batch went, once, after the last file has arrived."""
+            if not (report["added"] or report["failed"]) or time.monotonic() - report["last"] < UPLOAD_QUIET_SECONDS:
+                return
+            added, failed = list(report["added"]), list(report["failed"])
+            report["added"].clear()
+            report["failed"].clear()
+            if added:
+                await refresh_all()
+                ui.notify(added[0] if len(added) == 1 else f"Added {len(added)} documents to the inbox.", type="positive")
+            if failed:
+                if len(failed) == 1:
+                    message = failed[0]
+                else:
+                    shown = " ".join(failed[:MAX_FAILURES_SHOWN])
+                    more = f" And {len(failed) - MAX_FAILURES_SHOWN} more." if len(failed) > MAX_FAILURES_SHOWN else ""
+                    message = f"{len(failed)} files were not added. {shown}{more}"
+                ui.notify(message, type="negative", multi_line=True, close_button="Dismiss", timeout=15000)
 
         def on_rejected(e) -> None:
             entries = e.args if isinstance(e.args, list) else [e.args]
             names = [f["file"]["name"] for f in entries
                      if isinstance(f, dict) and isinstance(f.get("file"), dict) and f["file"].get("name")]
             for name in names:
-                ui.notify(f"{name} was not added: it is larger than {MAX_MB} MB. Compress it or split it, then try again.",
-                          type="negative")
+                note("failed", f"{name} was not added: it is larger than {MAX_MB} MB. Compress it or split it, then try again.")
             if not names:
-                ui.notify(f"Some files were not added: use PDF, PNG or JPG files of at most {MAX_MB} MB each.", type="negative")
+                note("failed", f"Some files were not added: use PDF, PNG or JPG files of at most {MAX_MB} MB each.")
 
         with ui.element("section").classes("vr-dropzone").props('aria-label="Upload invoices"'):
             html('<div><p style="margin:0;font-size:17px;font-weight:700">Drop invoices here to add them to the inbox</p>'
@@ -266,6 +297,39 @@ async def inbox_page() -> None:
                 ui.button("Clear filters", on_click=lambda: clear_filters()).props("no-caps flat") \
                     .classes("vr-btn vr-btn-small")
 
+        async def ask_delete(doc_id: str, filename: str) -> None:
+            if _batch["running"]:
+                ui.notify("Verification of the inbox is running. Cancel it or wait for it to finish, then delete.",
+                          type="warning")
+                return
+
+            async def confirm() -> None:
+                dialog.close()
+                try:
+                    await svc.delete_document(doc_id)
+                except Exception as exc:  # noqa: BLE001 - reported to the user, never a crash
+                    ui.notify(f"{doc_id} was not deleted: {exc}", type="negative")
+                    return
+                ui.notify(f"Deleted {filename}. You can upload it again.", type="positive")
+                await refresh_all()
+
+            with ui.dialog() as dialog, ui.card().classes("vr-card").style("max-width:480px;gap:12px"):
+                ui.label(f"Delete {doc_id}?").style("font-size:18px;font-weight:700")
+                ui.label(f"{filename} is removed from the inbox, together with its verdict and recording, so you can "
+                         "upload it and verify it again. The audit log and any review case stay as a record.")                     .classes("vr-small").style("font-size:14px")
+                with ui.row().style("gap:10px;justify-content:flex-end;width:100%"):
+                    ui.button("Cancel", on_click=dialog.close).props("no-caps flat").classes("vr-btn")
+                    ui.button("Delete", on_click=confirm).props("no-caps unelevated color=negative").classes("vr-btn")
+            dialog.open()
+
+        async def on_cell_clicked(e) -> None:
+            args = e.args or {}
+            data = args.get("data") or {}
+            if args.get("colId") == "delete_html" and data.get("doc_id"):
+                await ask_delete(data["doc_id"], data.get("filename") or data["doc_id"])
+
+        grid.on("cellClicked", on_cell_clicked, args=["colId", "data"])
+
         async def load_grid() -> None:
             docs = await svc.list_documents()
             q = (search.value or "").strip().lower()
@@ -275,9 +339,14 @@ async def inbox_page() -> None:
             grid.set_visibility(bool(rows))
             empty.set_visibility(not rows)
 
+        refresh_lock = asyncio.Lock()
+
         async def refresh_all() -> None:
-            await load_grid()
-            summary.refresh()
+            # One refresh at a time: two overlapping refreshes of the async `summary` both clear it and
+            # then both draw, which left several copies of the verdict tiles on the page.
+            async with refresh_lock:
+                await load_grid()
+                await summary.refresh()
 
         def clear_filters() -> None:
             search.value, verdict_sel.value, status_sel.value = "", "ALL", "ALL"
@@ -322,3 +391,4 @@ async def inbox_page() -> None:
 
         await tick()
         ui.timer(1.0, tick)
+        ui.timer(0.5, report_uploads)
