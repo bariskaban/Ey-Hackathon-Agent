@@ -6,6 +6,8 @@ agent/schemas.py and records them to data/runs/<doc_id>.jsonl, which powers the 
 
 import asyncio
 import re
+import shutil
+import tempfile
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -27,7 +29,7 @@ from agent.schemas import (
     Verdict,
 )
 from servers.common import audit
-from servers.common.config import DATA_DIR, RUNS_DIR, db_path
+from servers.common.config import DATA_DIR, INVOICES_DIR, RUNS_DIR, db_path
 from servers.common.db import read_only, writable
 from servers.documents import manifest
 from servers.documents.convert import find_tesseract
@@ -249,20 +251,27 @@ async def run_eval(model: str, runs_per_invoice: int = 3, *, doc_ids: list[str] 
     """Verify every test invoice `runs_per_invoice` times with `model` and stream progress.
 
     The last item has finished=True; the full report is then in `list_eval_runs()`. Evaluation never opens
-    review cases and never overwrites the recorded runs shown in the UI.
+    review cases and never overwrites the recorded runs shown in the UI. The 20 test invoices are copied
+    into a private, temporary inbox for the run, so they never appear in the user's inbox.
     """
-    gateway, _ = await _runtime.get()
     llm = LLM(model=model)
     last: EvalProgress | None = None
-    async for item in evaluation.run_evaluation(gateway, llm, runs_per_invoice, doc_ids=doc_ids,
-                                                use_agent=use_agent):
-        if isinstance(item, EvalReport):
-            (_eval_dir() / f"{item.run_id}.json").write_text(item.model_dump_json(indent=2), encoding="utf-8")
-            yield EvalProgress(run_id=item.run_id, model=item.model, completed=last.total if last else 0,
-                               total=last.total if last else 0, finished=True)
-        else:
-            last = item
-            yield item
+    with tempfile.TemporaryDirectory(prefix="vera-eval-") as staging:
+        folder = Path(staging)
+        for source in INVOICES_DIR.glob("INV-*.pdf"):
+            shutil.copy2(source, folder / source.name)
+        manifest.sync_inbox(folder)
+        async with Gateway(env={"INVOICE_INBOX_DIR": str(folder)}) as gateway:
+            async for item in evaluation.run_evaluation(gateway, llm, runs_per_invoice, doc_ids=doc_ids,
+                                                        use_agent=use_agent):
+                if isinstance(item, EvalReport):
+                    (_eval_dir() / f"{item.run_id}.json").write_text(item.model_dump_json(indent=2),
+                                                                      encoding="utf-8")
+                    yield EvalProgress(run_id=item.run_id, model=item.model, completed=last.total if last else 0,
+                                       total=last.total if last else 0, finished=True)
+                else:
+                    last = item
+                    yield item
 
 
 async def list_eval_runs() -> list[EvalReport]:

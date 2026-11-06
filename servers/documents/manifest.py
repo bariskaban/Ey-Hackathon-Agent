@@ -42,8 +42,8 @@ def inbox_dir() -> Path:
     return Path(os.environ.get("INVOICE_INBOX_DIR", INBOX_DIR))
 
 
-def manifest_path() -> Path:
-    return inbox_dir() / "manifest.json"
+def manifest_path(folder: Path | None = None) -> Path:
+    return (folder or inbox_dir()) / "manifest.json"
 
 
 def sha256_of(path: Path) -> str:
@@ -99,9 +99,10 @@ def load() -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def sync_inbox() -> dict:
-    """Scan the inbox, (re)build the manifest, and return it. Run when files are added."""
-    folder = inbox_dir()
+def sync_inbox(folder: Path | None = None) -> dict:
+    """Scan the inbox (or another folder, such as the private one an evaluation uses), (re)build its
+    manifest, and return it. Run when files are added."""
+    folder = folder or inbox_dir()
     folder.mkdir(parents=True, exist_ok=True)
     documents, rejected = {}, []
     for path in sorted(folder.iterdir()):
@@ -119,7 +120,7 @@ def sync_inbox() -> dict:
             continue
         documents[doc_id] = asdict(Entry(doc_id, path.name, sha, path.stat().st_size, mime, pages, has_text))
     manifest = {"documents": documents, "rejected": rejected}
-    manifest_path().write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    manifest_path(folder).write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return manifest
 
 

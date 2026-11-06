@@ -1,4 +1,4 @@
-"""Copy the 20 test invoices into the inbox and build the manifest.
+"""Copy the 20 test invoices into the inbox and build the manifest (optional: the inbox starts empty).
 
     python scripts/load_inbox.py
 
