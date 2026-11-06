@@ -98,7 +98,16 @@ async def upload_document(filename: str, data: bytes) -> DocumentInfo:
     inbox = manifest.inbox_dir()
     inbox.mkdir(parents=True, exist_ok=True)
     target = inbox / name
-    target.write_bytes(data)
+    try:
+        # Exclusive create: never replace a document that is already in the inbox, because a
+        # replaced file would change what an earlier verdict and its audit trail refer to.
+        with target.open("xb") as f:
+            f.write(data)
+    except FileExistsError:
+        raise ValueError(
+            f"{name} was not accepted: a document with this file name is already in the inbox. "
+            "Rename the file and upload it again"
+        ) from None
     result = manifest.sync_inbox()
     rejected = next((r for r in result["rejected"] if r["filename"] == name), None)
     if rejected:
