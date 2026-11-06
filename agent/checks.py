@@ -11,7 +11,9 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
+from typing import Any
 
+from agent import injection
 from agent.schemas import (
     DEFAULT_SEVERITY,
     CheckResult,
@@ -74,6 +76,7 @@ class Context:
     supplier_vat: str | None = None  # the supplier VAT number to use (after an OCR repair, if one was needed)
     treatment: dict | None = None  # filled by vat_treatment: how VAT must be handled for this supplier
     verified_fields: set[str] = field(default_factory=set)  # key fields confirmed by master data
+    llm: Any = None  # the model, for the injection check's second look; None means the phrase list decides alone
 
 
 # --------------------------------------------------------------------------- helpers
@@ -161,14 +164,25 @@ async def check_vendor_lookup(ctx: Context) -> CheckOutcome:
                    flags=flags)
 
 
-def check_injection_scan(ctx: Context) -> CheckOutcome:
+async def check_injection_scan(ctx: Context) -> CheckOutcome:
+    """Text aimed at an AI system. The phrase list is instant; if it finds nothing, the model takes a second look."""
     name, server = "injection_scan", "host"
-    text = ctx.markdown + "\n" + (ctx.invoice.notes or "")
+    text = ctx.markdown + chr(10) + (ctx.invoice.notes or "")
     match = INJECTION_RE.search(text)
-    if not match:
-        return _passed(name, server, "no instructions aimed at an AI system found in the document text")
-    snippet = " ".join(text[match.start():match.start() + 160].split())  # the matched text and what follows it
-    detail = f"the document contains text aimed at an AI system: \"{snippet}\""
+    if match:
+        snippet = " ".join(text[match.start():match.start() + 160].split())  # the matched text and what follows it
+        return _injection_failed(name, server, snippet, "")
+    if ctx.llm is not None and injection.enabled():
+        quote = await injection.find_injection(ctx.llm, text)
+        if quote:
+            return _injection_failed(name, server, quote[:160], " (found by the model)")
+        return _passed(name, server, "no instructions aimed at an AI system found in the document text "
+                                     "(phrase list and model check)")
+    return _passed(name, server, "no instructions aimed at an AI system found in the document text")
+
+
+def _injection_failed(name: str, server: str, snippet: str, how: str) -> CheckOutcome:
+    detail = f"the document contains text aimed at an AI system{how}: \"{snippet}\""
     return _failed(name, server, ErrorType.PROMPT_INJECTION, detail,
                    [_discrepancy(ErrorType.PROMPT_INJECTION, "notes", "invoice data only", snippet, detail)],
                    flags=["possible prompt injection: the extracted data cannot be trusted"])

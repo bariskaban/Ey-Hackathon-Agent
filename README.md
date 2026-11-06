@@ -76,7 +76,7 @@ Fraud-type findings (changed IBAN, sanctioned vendor, duplicate) give `Mismatch`
 
 | Server | Checks |
 |---|---|
-| host | No instructions aimed at the AI |
+| host | No instructions aimed at the AI (phrase list, then a model check) |
 | transactions | Vendor is known · Not a duplicate · Not already paid · Matches the purchase order · Goods received |
 | tax_rules | Supplier VAT number is valid · Correct VAT treatment (domestic or reverse charge) · Correct VAT rate · Mandatory invoice fields (including the KvK number) · VAT arithmetic |
 | vendor_checks | Bank details match the vendor record (the IBAN is validated too) · Not on a sanctions list · No overlap with employees |
@@ -111,7 +111,7 @@ Fraud-type findings (changed IBAN, sanctioned vendor, duplicate) give `Mismatch`
 - **Narrow tools.** Read-only database connection, parameterised queries only, at most 20 rows per call, IBANs masked to the last four digits, and aggregates suppressed when fewer than 5 records back them.
 - **Budget.** At most 60 tool calls per invoice.
 - **Audit log.** Every call, allowed or refused, is written to `data/audit.jsonl` and shown on the "What the AI saw" page.
-- **Prompt injection.** Invoice text is wrapped as untrusted data, scanned for instructions aimed at the AI, and cannot change the verdict. Documents containing such instructions go to a person.
+- **Prompt injection.** Invoice text is wrapped as untrusted data and cannot change the verdict. It is scanned twice for text aimed at an AI: first with a list of known phrasings (instant), then, if that finds nothing, by the model itself in a separate call that may only classify and must quote the exact words (a quote that is not really in the document is ignored). Documents containing such text go to a person; neither scan can approve anything.
 - **Humans decide.** Only a reviewer in the interface can approve, reject or escalate a case, and a reason is required. This is never exposed as a tool to any agent.
 - **Safe file handling.** Only PDF, PNG and JPG; at most 10 MB and 10 pages. Raw file paths and URIs are never accepted; documents are referred to by short ids such as `INV-001`.
 - **The original file is never changed.** Highlights are drawn on a copy.
@@ -264,6 +264,7 @@ All settings are environment variables; none are required.
 | `INVOICE_MODEL` | `qwen3:8b` | Ollama model to use. |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Where Ollama is. |
 | `INVOICE_NUM_CTX` | `12288` | Context size given to the model. |
+| `INVOICE_MODEL_INJECTION_CHECK` | on | Set to `0` to turn off the model's second look for prompt injection (it adds about a second per document); the phrase list keeps working. |
 | `INVOICE_MODEL_CAN_ESCALATE` | off | Set to `1` to let the model's notes send a clean invoice to review. Off by default: its notes are advice only. |
 | `INVOICE_TESSERACT_CMD` | found on `PATH` | Full path of the Tesseract program, if it is not on `PATH`. |
 | `INVOICE_DATA_DIR` | `data/` | Where the database, inbox, runs, cache, outbox and audit log live. |
@@ -354,6 +355,12 @@ Options: `--runs 1 --no-agent` for a quick check, `--model <name>` to try anothe
 | Same verdict in every run | 20 of 20 |
 | Mean time per invoice | 29 seconds |
 
+To measure the prompt-injection check on a set of injections and harmless look-alikes (the sets used so far are in `eval/injection_sets/`; write a new one for an honest measure):
+
+```bash
+python eval/injection_check.py eval/injection_sets/set_b.json out.json
+```
+
 To measure how well the model reads the invoices on its own:
 
 ```bash
@@ -418,4 +425,5 @@ Read [CLAUDE.md](CLAUDE.md). In short: never commit to `main`; work on a branch 
 - Invoices must be in English; anything else goes straight to review.
 - Scans depend on OCR quality. Unreadable key fields send the invoice to a person rather than guessing.
 - The data is synthetic. Connecting Vera to a real ledger (for example SAP or Exact) means writing new servers behind the same tools; the agent and the interface would not change.
+- The prompt-injection check is a phrase list plus a small local model; on 20 fresh injections it caught 18 to 19 with no false alarms on 20 harmless look-alikes and none on 67 real documents (`eval/results/injection-check.txt`). That is a small sample, so a determined attacker with a new trick may still get through; it only ever sends a document to a person.
 - Evaluated on 20 invoices with one model (`qwen3:8b`). On the 30 differently designed samples it gets 23 right; the rest depend on OCR quality and on how unusual the layout is (see [Sample invoices](#sample-invoices-for-stress-testing)).

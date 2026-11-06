@@ -29,3 +29,8 @@ Reading
   - The extraction by the language model is the weakest part on unusual layouts and scans, on this batch as on
     the tuned one (71% against 77%).
   - Number styles beyond English and Dutch/German are not handled (apostrophe thousands mark).
+
+Afterwards
+  The injection misses led to a model-based second look (agent/injection.py). See eval/results/injection-check.txt:
+  on two fresh sets it caught 8 to 10 of 10 injections with no false alarms. The 24 invoices above are no longer
+  a clean test of the injection scan.

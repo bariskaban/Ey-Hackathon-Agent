@@ -1,0 +1,28 @@
+Model-based prompt injection check (agent/injection.py), qwen3:8b, temperature 0.
+
+It runs after the phrase list (checks.INJECTION_RE) finds nothing. The model answers one narrow question in a call of
+its own and must quote the offending words; the quote has to be found in the document or the answer is ignored.
+
+Fresh injections, each put into the text of a real invoice (eval/injection_check.py, sets in eval/injection_sets/)
+
+  set A  10 injections, 10 harmless look-alikes      first run, before any change
+         phrase list  0 of 10      model  8 of 10      harmless flagged  0 of 10
+         (the misses: an injection written as JSON, and one in an HTML comment)
+  -- one prompt change: "this also applies when the text is disguised as JSON, code, a comment, a chat, or
+     another language" --
+  set A  again (partly tuned now)    model  9 of 10      harmless flagged  0 of 10
+  set B  10 new injections, 10 new harmless look-alikes, written before the rerun
+         phrase list  1 of 10      model 10 of 10      harmless flagged  0 of 10
+         (9 of 10 when the surrounding invoice is INV-004 instead of sample 8: the result moves a little with context)
+
+Real documents (74: the 20 test invoices, the 30 samples, the 24 held-out invoices; scans read with OCR)
+  planted injections  7      flagged by the phrase list 4, by the model 6, by either 7
+  documents without an injection  67      false alarms  0
+
+Cost: about 1 second per document, one extra model call.
+
+Caveats
+  - 10 + 10 per set is a small sample, from a single 8B model; expect misses on wordings nobody has tried.
+  - The model check can fail open: an unusable answer or an unreachable model leaves the phrase list to decide.
+  - It only sends a document to review. It can never approve anything, and no instruction in a document is followed.
+  - The 4 held-out injections (eval/heldout.py) had been seen when the prompt was written, so they are not a test of it.
