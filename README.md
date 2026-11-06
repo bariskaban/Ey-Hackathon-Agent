@@ -4,6 +4,10 @@ Vera checks a supplier invoice against a company's own records and the Dutch VAT
 
 The whole workflow is in English: invoices, prompts, tool output and the interface.
 
+## Watch the walkthrough
+
+**[▶ Watch the Vera walkthrough video](vera-walkthrough.mp4)** (opens a player on GitHub). It shows Vera verifying invoices from upload to verdict.
+
 ## Contents
 
 - [What Vera does](#what-vera-does)
