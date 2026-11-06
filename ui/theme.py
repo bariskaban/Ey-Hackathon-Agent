@@ -236,7 +236,9 @@ def shell(active: str, status: Any, open_cases: int | None = None) -> Iterator[u
                              f'<span>{label}</span>{count}</a></li>')
             html('<div><div class="vr-nav-label">Workspace</div><ul class="vr-nav">' + "".join(items) + "</ul></div>")
             with ui.element("div").classes("vr-rail-foot"):
-                dark = ui.dark_mode()
+                # Each page builds its own switch, so the choice is kept per browser and every page starts from it.
+                dark = ui.dark_mode(value=bool(app.storage.user.get("dark", False)),
+                                    on_change=lambda e: app.storage.user.update(dark=bool(e.value)))
                 ui.button("Light or dark", icon="contrast", on_click=dark.toggle).props("flat no-caps").classes(
                     "vr-nav-link").style("width:100%")
                 html(f'<div class="vr-rail-note"><span class="vr-rail-lock">{LOCK}</span><span>'
