@@ -130,3 +130,54 @@ def test_a_replay_plays_the_recorded_run_without_running_anything(inbox, case):
     assert [e.type for e in replayed] == [e.type for e in events]
     assert replayed[-1].verdict.verdict == "MISMATCH" and replayed[-1].verdict.discrepancies
     assert after_count == before  # nothing was run, so nothing new was logged
+
+
+def test_a_document_already_being_verified_is_followed_not_run_twice(monkeypatch):
+    """Watching (or pressing Verify on) a running document must not start a second run of it."""
+    started = []
+
+    async def fake_verify(doc_id):
+        started.append(doc_id)
+        for n in range(3):
+            await asyncio.sleep(0.05)
+            yield n
+
+    monkeypatch.setattr(ui_service.backend, "verify", fake_verify)
+    monkeypatch.setattr(ui_service, "_event_view", lambda event, seen: {"type": "stage", "n": event})
+
+    async def scenario():
+        first: list = []
+
+        async def driver():
+            async for view in ui_service.verify("DOC-1"):
+                first.append(view.n)
+
+        task = asyncio.create_task(driver())
+        await asyncio.sleep(0.07)  # the run is under way: one event seen, two to come
+        assert "DOC-1" in ui_service._running
+
+        async def collect(stream):
+            return [view.n async for view in stream]
+
+        followed, again = await asyncio.gather(collect(ui_service.watch("DOC-1")),
+                                               collect(ui_service.verify("DOC-1")))  # both while it runs
+        await task
+        nothing = [view async for view in ui_service.watch("DOC-1")]
+        return first, followed, again, nothing
+
+    first, followed, again, nothing = asyncio.run(scenario())
+    assert started == ["DOC-1"]  # one run only
+    assert first == followed == again == [0, 1, 2]  # a late watcher still sees every event from the start
+    assert nothing == [] and not ui_service._running and not ui_service._live
+
+
+def test_documents_waiting_for_a_batch_are_marked_queued_until_their_turn(monkeypatch):
+    class Info:
+        doc_id, filename, type, size_bytes, pages, verdict = "DOC-2", "a.pdf", "application/pdf", 1, 1, None
+
+    ui_service.queue_documents(["DOC-2"])
+    try:
+        assert ui_service._document(Info())["status"] == "QUEUED"
+    finally:
+        ui_service.unqueue_documents(["DOC-2"])
+    assert ui_service._document(Info())["status"] == "NOT_VERIFIED"

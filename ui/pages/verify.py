@@ -7,6 +7,7 @@ from typing import Any
 
 from nicegui import ui
 
+from ui import batch
 from ui.components.widgets import (
     check_icon,
     check_word,
@@ -19,6 +20,7 @@ from ui.components.widgets import (
 from ui.services import expected_checks, open_case_count, svc
 from ui.theme import CHECK_LABELS, ROLE_LABELS, SERVER_GROUPS, esc, eur, fmt_date, html, key, shell
 
+FOLLOW_PAUSE_SECONDS = 3  # a followed batch stays on a finished invoice this long before moving to the next
 STAGES = [("convert", "Read document"), ("extract", "Extract fields"), ("checks", "Run checks"),
           ("agent", "Agent review"), ("verdict", "Verdict"), ("report", "Report")]
 
@@ -28,23 +30,43 @@ async def verify_index() -> None:
     """No document chosen: list the ones that can be verified."""
     status = await svc.system_status()
     with shell("verify", status, await open_case_count()):
-        html(page_header("Live verification", "Choose a document to verify. Verified ones open their verdict."))
+        running = bool(batch.state["running"])
+        html(page_header("Live verification", "Verify all is running: this page follows it."
+                         if running else "Choose a document to verify. Verified ones open their verdict."))
         docs = await svc.list_documents()
         rows = []
         for d in docs:
             done = key(d.status) == "VERIFIED"
-            href = f"/verdict/{esc(d.doc_id)}" if done else f"/verify/{esc(d.doc_id)}?start=1"
+            if done:
+                action = f'<a class="vr-btn vr-btn-small" href="/verdict/{esc(d.doc_id)}">Open verdict</a>'
+            elif key(d.status) == "VERIFYING":
+                action = f'<a class="vr-btn vr-btn-small" href="/verify/{esc(d.doc_id)}">Watch</a>'
+            elif running and key(d.status) == "QUEUED":
+                action = '<span class="vr-small">Waiting for Verify all</span>'
+            elif running:
+                action = '<span class="vr-small">Not while Verify all runs</span>'
+            else:
+                action = f'<a class="vr-btn vr-btn-small" href="/verify/{esc(d.doc_id)}?start=1">Verify</a>'
             rows.append(f'<tr><td class="vr-num">{esc(d.doc_id)}</td><td>{esc(d.vendor_name or d.filename)}</td>'
                         f'<td class="vr-num vr-right">{eur(d.amount_total)}</td><td>{verdict_badge(d.verdict)}</td>'
-                        f'<td class="vr-right"><a class="vr-btn vr-btn-small" href="{href}">'
-                        f'{"Open verdict" if done else "Verify"}</a></td></tr>')
+                        f'<td class="vr-right">{action}</td></tr>')
         html('<section class="vr-card"><div class="vr-table-wrap"><table class="vr-table"><thead><tr>'
              '<th>Document</th><th>Vendor</th><th class="vr-right">Amount</th><th>Verdict</th>'
              '<th><span class="vr-sr">Action</span></th></tr></thead><tbody>' + "".join(rows) + "</tbody></table></div></section>")
 
+        def follow_the_batch() -> None:
+            """Go to the invoice the batch is verifying; reload when a batch starts or ends so the buttons are right."""
+            current = batch.state["current"]
+            if batch.state["running"] and current:
+                ui.navigate.to(f"/verify/{current}?follow=1")
+            elif bool(batch.state["running"]) != running:
+                ui.navigate.reload()
+
+        ui.timer(0.5, follow_the_batch)
+
 
 @ui.page("/verify/{doc_id}")
-async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
+async def verify_page(doc_id: str, start: int = 0, replay: int = 0, follow: int = 0) -> None:
     status = await svc.system_status()
     docs = {d.doc_id: d for d in await svc.list_documents()}
     doc = docs.get(doc_id)
@@ -69,6 +91,7 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
             with ui.element("div").style("display:flex;flex-wrap:wrap;align-items:center;gap:10px"):
                 mode_chip = html("")
                 timer_chip = html("")
+                batch_chip = html("")
                 start_btn = ui.button("Start verification", on_click=lambda: begin()) \
                     .props("no-caps unelevated").classes("vr-btn vr-btn-primary")
                 cancel_btn = ui.button("Cancel run", on_click=lambda: cancel()).props("no-caps flat").classes("vr-btn")
@@ -166,6 +189,15 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                 secs = int(time.monotonic() - state["t0"])
                 state["elapsed"] = secs
             secs = state.get("elapsed", 0)
+            running = batch.state["running"]
+            batch_chip.set_content(
+                f'<span class="vr-pill">Verify all: {max(batch.state["index"], 1)} of {batch.state["total"]}</span>'
+                if running else "")
+            start_btn.set_enabled(not running)  # a batch is verifying (or about to verify) these documents
+            ended = state.get("ended")
+            if (follow and running and batch.state["current"] not in (None, doc_id) and not state["running"]
+                    and ended is not None and time.monotonic() - ended >= FOLLOW_PAUSE_SECONDS):
+                ui.navigate.to(f"/verify/{batch.state['current']}?follow=1")
             timer_chip.set_content(f'<span class="vr-pill">Elapsed <span class="vr-num" style="font-size:15px;'
                                    f'font-weight:500">{secs // 60:02d}:{secs % 60:02d}</span></span>')
 
@@ -241,9 +273,12 @@ async def verify_page(doc_id: str, start: int = 0, replay: int = 0) -> None:
                 show_error()
             finally:
                 state["running"] = False
+                state["ended"] = time.monotonic()
                 render()
 
         def begin() -> None:
+            if batch.state["running"] and doc_id != batch.state["current"]:
+                return  # the batch will verify it in its turn
             if not state["running"]:
                 state["task"] = asyncio.create_task(run())
 

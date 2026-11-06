@@ -6,8 +6,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-from nicegui import background_tasks, ui
+from nicegui import ui
 
+from ui import batch
 from ui.components.widgets import error_label, page_header, severity_tag, verdict_badge
 from ui.services import open_case_count, svc
 from ui.theme import (
@@ -28,7 +29,7 @@ MAX_FLAGS_SHOWN = 2
 MAX_FAILURES_SHOWN = 3  # failed files named in the one summary message of an upload
 UPLOAD_QUIET_SECONDS = 0.8  # an upload batch is reported once no file has arrived for this long
 STATUS_ICONS = {"VERIFIED": "✓", "VERIFYING": "↻", "QUEUED": "…", "NOT_VERIFIED": "–"}
-_batch: dict[str, Any] = {"running": False, "current": None, "index": 0, "total": 0, "done": 0, "task": None}
+_batch = batch.state
 
 GRID_CSS = """
 .vr-ag{--ag-background-color:var(--vr-sheet);--ag-foreground-color:var(--vr-ink);--ag-header-background-color:var(--vr-sheet);
@@ -98,6 +99,8 @@ def _action_html(doc_id: str, st: str | None) -> str:
         return f'<a class="vr-btn vr-btn-small" href="/verdict/{d}" aria-label="Open verdict for {d}">Open</a>'
     if st == "VERIFYING":
         return f'<a class="vr-btn vr-btn-small" href="/verify/{d}" aria-label="Watch verification of {d}">Watch</a>'
+    if st == "QUEUED":
+        return f'<span class="vr-small" aria-label="{d} is waiting for Verify all">Waiting</span>'
     return f'<a class="vr-btn vr-btn-small" href="/verify/{d}?start=1" aria-label="Verify {d}">Verify</a>'
 
 
@@ -143,19 +146,6 @@ def _matches(d: Any, q: str, verdict: str, status: str) -> bool:
         return False
     hay = " ".join(str(x or "") for x in (d.doc_id, d.filename, d.vendor_name, d.invoice_number)).lower()
     return not q or q in hay
-
-
-async def _verify_all(doc_ids: list[str]) -> None:
-    """Verify the given invoices one after another. One run at a time, shared by all tabs."""
-    _batch.update(running=True, total=len(doc_ids), index=0, done=0, task=asyncio.current_task())
-    try:
-        for i, doc_id in enumerate(doc_ids, 1):
-            _batch.update(current=doc_id, index=i)
-            async for _ in svc.verify(doc_id):
-                pass
-            _batch["done"] += 1
-    finally:
-        _batch.update(running=False, current=None, task=None)
 
 
 @ui.page("/")
@@ -366,15 +356,12 @@ async def inbox_page() -> None:
             if not todo:
                 ui.notify("Every document is already verified.")
                 return
-            _batch.update(running=True, total=len(todo), index=0, done=0, current=None)
-            background_tasks.create(_verify_all(todo), name="verify_all")
+            batch.start(todo)
             ui.notify(f"Verifying {len(todo)} documents one after another.")
             await tick()
 
         def cancel_all() -> None:
-            task = _batch["task"]
-            if task and not task.done():
-                task.cancel()
+            if batch.cancel():
                 ui.notify("Verification cancelled. Finished invoices keep their verdicts.")
 
         async def tick() -> None:
