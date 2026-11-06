@@ -300,7 +300,7 @@ There are 20 test invoices: 6 clean and 14 with one planted error each. `data/in
 
 ## Sample invoices for stress testing
 
-Real invoices do not look alike, so neither do these. `python scripts/make_samples.py` writes 30 invoices to `samples/` (git-ignored) and an `answer-key.md` that says what each one should give. Every one is built differently:
+Real invoices do not look alike, so neither do these. `python scripts/make_samples.py` writes 30 invoices to `samples/` (committed, so you can use them without running the script) and an `answer-key.md` that says what each one should give. Every one is built differently:
 
 - **Eleven document structures:** a classic letter, a sidebar, a banner header, a minimal page, a ruled form, a two-page letter with terms and a tear-off remittance slip, a landscape sheet, a dense page that puts the total first, a typewriter printout, a stamped copy and a narrow till-roll receipt.
 - **A drawn logo and company details for each supplier**, with its own colours, tagline and name style.

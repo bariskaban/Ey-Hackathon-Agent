@@ -46,6 +46,3 @@ data/cache/
 # generated at run time
 data/audit.jsonl
 data/*.log
-
-# Sample invoices made by scripts/make_samples.py
-samples/
