@@ -7,6 +7,7 @@ name = "vera"
 version = "1.0.0"
 description = "Vera: a local, MCP-gated AI agent that verifies invoices against company records and Dutch VAT rules."
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.11"
 dependencies = [
     "faker>=30.0",

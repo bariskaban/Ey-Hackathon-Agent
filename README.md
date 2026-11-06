@@ -419,6 +419,10 @@ This starts all six over HTTP (ports 8101 to 8106, each at `/mcp`). Connect with
 
 Read [CLAUDE.md](CLAUDE.md). In short: never commit to `main`; work on a branch named `<name>-<work>`, open a pull request and merge it; declare every new package in `pyproject.toml`; never commit secrets, `.env` files or generated data.
 
+## License
+
+Vera is released under the [MIT License](LICENSE).
+
 ## Known limits
 
 - The VAT rules cover the Netherlands (domestic, intra-EU reverse charge); other countries' rules are not modelled.
