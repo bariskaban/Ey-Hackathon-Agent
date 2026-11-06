@@ -208,7 +208,7 @@ Open <http://localhost:8080>. (After `pip install -e .` the command `vera` does 
 
 | Page | Address | What it is for |
 |---|---|---|
-| **Inbox** | `/` | Upload invoices (drag and drop, several at once). A table of every document with vendor, amount, status, verdict and risk flags; search and filter; **Verify** per row or **Verify all**. |
+| **Inbox** | `/` | Upload invoices (drag and drop, several at once). A table of every document with vendor, amount, status, verdict and risk flags; search and filter; **Verify** per row or **Verify all**. **Delete** per row removes a document with its verdict and recording so you can upload and verify it again (the audit log and any review case stay as a record). Many files dropped at once give one summary message. |
 | **Live verification** | `/verify` and `/verify/<id>` | Watch one invoice being verified: the six stages, the 16 checks filling in, every tool call as it happens, the agent's notes, a timer, and Cancel. |
 | **Verdicts** | `/verdict/<id>` | The result: verdict banner, confidence, risk flags and discrepancy table; the original invoice with the problems boxed; extracted fields (uncertain ones marked); the VAT panel, bank panel and evidence records. |
 | **Review queue** | `/review` | Cases sorted by severity, with filters. Add notes, then **Approve**, **Reject** or **Escalate** (a reason is required), or export the **evidence pack** as PDF or spreadsheet. |
