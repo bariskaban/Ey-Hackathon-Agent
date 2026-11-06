@@ -94,6 +94,17 @@ LABELS = {  # wording differs between companies
           "vat_table": "VAT", "base": "Base", "vat_amt": "VAT"},
 }
 
+LABELS["e"] = {"title": "Statement of charges", "no": "Ref. no.", "date": "Dated", "supply": "Delivered on",
+               "due": "Settle by", "po": "Order ref.", "vat": "Tax ID", "kvk": "Registry no.", "bill": "Charged to",
+               "from": "Provider", "iban": "Remit to (IBAN)", "net": "Sum before VAT", "tax": "VAT charged",
+               "gross": "Total payable", "sku": "Code", "desc": "Goods / services", "qty": "No.", "unit": "Each",
+               "rate": "VAT", "amount": "Sum", "vat_table": "Rate", "base": "Basis", "vat_amt": "VAT"}
+LABELS["f"] = {"title": "Bill", "no": "Bill no.", "date": "Bill date", "supply": "Completed", "due": "Due by",
+               "po": "PO ref", "vat": "VAT reg no.", "kvk": "KvK", "bill": "Client", "from": "Vendor",
+               "iban": "IBAN", "net": "Amount before tax", "tax": "Tax", "gross": "Balance due", "sku": "SKU",
+               "desc": "Description", "qty": "Qty", "unit": "Price each", "rate": "Tax %", "amount": "Line amount",
+               "vat_table": "Tax %", "base": "Before tax", "vat_amt": "Tax"}
+
 REVERSE_CHARGE = [
     "Reverse charge: VAT is reverse-charged to the recipient. Supplier VAT number: {s}. Customer VAT number: {b}.",
     "VAT reverse charged (intra-Community supply of services). Supplier VAT ID {s}, customer VAT ID {b}.",
@@ -121,7 +132,7 @@ class View:
         self.reg, self.bold, self.ital = FONTS[d.get("font", "sans")]
         self.cols = d.get("cols", ["sku", "desc", "qty", "unit", "rate", "amount"])
         built_in = d.get("font", "sans") != "sans" or d.get("layout") in ("typewriter", "receipt")
-        if built_in and d.get("money") in ("sym", "eu"):  # built-in PDF fonts cannot carry the euro sign
+        if built_in and d.get("money") in ("sym", "eu", "space"):  # built-in PDF fonts cannot carry the euro sign
             self.d = d = {**d, "money": "en"}
         self.s, self.b = spec["supplier"], spec["buyer"]
         self.archetype = d.get("archetype", "office")
@@ -138,6 +149,10 @@ class View:
             return "€ " + text.replace(",", "\0").replace(".", ",").replace("\0", ".")
         if kind == "suffix":
             return f"{text} EUR"
+        if kind == "space":  # 1 234,56 followed by the euro sign
+            return text.replace(",", " ").replace(".", ",") + " €"
+        if kind == "apos":  # a Swiss-style thousands mark
+            return "EUR " + text.replace(",", chr(39))
         return f"{amount:.2f}"  # plain
 
     def day(self, iso: str | None) -> str:
@@ -159,7 +174,9 @@ class View:
         return who["address"].split(", ", 1)
 
     def party(self, who: dict, with_iban: bool = False) -> list[str]:
-        rows = [*self.address(who), f"{self.L['vat']}: {who['vat_number']}"]
+        rows = [*self.address(who)]
+        if who.get("vat_number"):
+            rows.append(f"{self.L['vat']}: {who['vat_number']}")
         if who.get("kvk_number"):
             rows.append(f"{self.L['kvk']}: {who['kvk_number']}")
         if with_iban and who.get("iban"):
@@ -528,7 +545,9 @@ def layout_banner(c, v: View):
     c.rect(0, PAGE_H - 42 * mm, PAGE_W, 42 * mm, fill=1, stroke=0)
     logo(c, v.d.get("logo", "hexagon"), m, PAGE_H - 33 * mm, 22 * mm, v, on_dark=True)
     wordmark(c, v, m + 28 * mm, PAGE_H - 22 * mm, 15, color=white, tagcolor=v.tint)
-    text(c, PAGE_W - m, PAGE_H - 24 * mm, v.L["title"].upper(), v.bold, 20, white, "r", space=3)
+    long_title = len(v.L["title"]) > 12
+    text(c, PAGE_W - m, PAGE_H - 24 * mm, v.L["title"].upper(), v.bold, 12 if long_title else 20, white, "r",
+         space=1.5 if long_title else 3)
     y = PAGE_H - 50 * mm
     boxes = v.meta()
     bw = (PAGE_W - 2 * m) / len(boxes)

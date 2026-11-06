@@ -207,6 +207,7 @@ async def verify_document(doc_id: str, gateway: Gateway, llm: LLM, emit: Callabl
         return await recording.call("verifier", tool, args, invoice_id=doc_id)
 
     ctx = checks_mod.Context(invoice=extraction.invoice, markdown=extraction.markdown, call=call_verifier,
+                             llm=llm if use_agent else None,
                              ocr=extraction.method == "ocr")
     outcomes: list[checks_mod.CheckOutcome] = []
     for check in checks_mod.FIXED_CHECKS:
